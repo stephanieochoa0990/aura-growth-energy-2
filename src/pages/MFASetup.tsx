@@ -8,46 +8,65 @@ import { useNavigate } from "react-router-dom";
 export default function MFASetup() {
   const [qr, setQr] = useState<string | null>(null);
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [challengeId, setChallengeId] = useState<string | null>(null);
   const [code, setCode] = useState("");
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // STEP 1 — Enroll TOTP MFA
+  // STEP 1 — Enroll & Challenge
   useEffect(() => {
     async function enroll() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
 
-      if (!user) return;
+      // 1️⃣ ENROLL TOTP FACTOR
+      const { data: enrollData, error: enrollError } = 
+        await supabase.auth.mfa.enroll({
+          factorType: "totp",     // <-- FIXED
+          friendlyName: "White Lotus MFA",
+        });
 
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factor_type: "totp",
-        friendly_name: "White Lotus MFA",
-      });
-
-      if (error) {
+      if (enrollError) {
         toast({
           title: "MFA Setup Failed",
-          description: error.message,
+          description: enrollError.message,
           variant: "destructive",
         });
         return;
       }
 
-      setQr(data.totp.qr_code);
-      setFactorId(data.id);
+      setQr(enrollData.totp.qr_code);
+      setFactorId(enrollData.id);
+
+      // 2️⃣ REQUEST CHALLENGE
+      const { data: challengeData, error: challengeError } =
+        await supabase.auth.mfa.challenge({
+          factorId: enrollData.id,   // <-- camelCase, required
+        });
+
+      if (challengeError) {
+        toast({
+          title: "Challenge Error",
+          description: challengeError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setChallengeId(challengeData.id);
     }
 
     enroll();
   }, []);
 
-  // STEP 2 — Verify the MFA code
+  // STEP 2 — Verify Code
   async function verifyMFA() {
-    if (!factorId) return;
+    if (!factorId || !challengeId) return;
 
     const { error } = await supabase.auth.mfa.verify({
-      factor_id: factorId, // MUST BE factor_id (underscore)
+      factorId,       // <-- must be camelCase
+      challengeId,    // <-- must be camelCase
       code,
     });
 
@@ -69,18 +88,20 @@ export default function MFASetup() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6 text-white">
+    <div className="max-w-md mx-auto p-6 text-white space-y-6">
       <h1 className="text-2xl font-bold">Set Up MFA</h1>
 
       {qr && (
         <img
           src={qr}
-          alt="MFA QR Code"
+          alt="QR Code"
           className="w-48 h-48 mx-auto border p-2 rounded"
         />
       )}
 
-      <p>Enter the 6-digit code from your authenticator app.</p>
+      <p className="text-gray-300">
+        Scan the QR code with Google Authenticator or Authy and enter the 6-digit code.
+      </p>
 
       <Input
         value={code}
