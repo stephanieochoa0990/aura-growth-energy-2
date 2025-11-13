@@ -24,8 +24,10 @@ import AdminSetup from "./pages/AdminSetup";
 import ResetPassword from "./pages/ResetPassword";
 import StudentWelcome from "./pages/StudentWelcome";
 
-// ⭐ NEW: import MFA setup page
+
+// ★ NEW: import MFA setup page
 import MFASetup from "./pages/MFASetup";
+
 
 const queryClient = new QueryClient();
 

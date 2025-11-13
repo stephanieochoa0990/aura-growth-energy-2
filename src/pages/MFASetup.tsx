@@ -3,87 +3,95 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 export default function MFASetup() {
-  const [user, setUser] = useState<any>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [factorId, setFactorId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
+  // STEP 1 — Enroll TOTP MFA
   useEffect(() => {
-    load();
-  }, []);
+    async function enroll() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  async function load() {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return;
-    setUser(auth.user);
+      if (!user) return;
 
-    const { data, error } = await supabase.auth.mfa.enroll({
-      factorType: "totp",
-      issuer: "White Lotus Academy",
-      friendlyName: "TOTP Authenticator"
-    });
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factor_type: "totp",
+        friendly_name: "White Lotus MFA",
+      });
 
-    if (error) {
-      console.error(error);
-      toast({ title: "MFA Error", description: error.message, variant: "destructive" });
-      return;
+      if (error) {
+        toast({
+          title: "MFA Setup Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setQr(data.totp.qr_code);
+      setFactorId(data.id);
     }
 
-    setQr(data.totp.qr_code ?? null);
-    setFactorId(data.id);
-  }
+    enroll();
+  }, []);
 
-  async function verify() {
+  // STEP 2 — Verify the MFA code
+  async function verifyMFA() {
+    if (!factorId) return;
+
     const { error } = await supabase.auth.mfa.verify({
-      factorId,
-      code
+      factor_id: factorId, // MUST BE factor_id (underscore)
+      code,
     });
 
     if (error) {
-      toast({ title: "Incorrect Code", description: "Try again.", variant: "destructive" });
+      toast({
+        title: "Incorrect Code",
+        description: "Try again.",
+        variant: "destructive",
+      });
       return;
     }
 
     toast({
       title: "MFA Enabled",
-      description: "Your account is now protected with 2-step verification."
+      description: "Your account is now protected.",
     });
 
-    window.location.href = "/student-welcome";
+    navigate("/student-welcome");
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-6">
-      <Card className="max-w-md w-full bg-gray-900 border-yellow-600/20 text-white">
-        <CardHeader>
-          <CardTitle className="text-yellow-500">Secure Your Account</CardTitle>
-        </CardHeader>
+    <div className="max-w-md mx-auto p-6 space-y-6 text-white">
+      <h1 className="text-2xl font-bold">Set Up MFA</h1>
 
-        <CardContent className="space-y-4">
-          <p>Scan this QR code with Google Authenticator, Authy, or another TOTP app.</p>
+      {qr && (
+        <img
+          src={qr}
+          alt="MFA QR Code"
+          className="w-48 h-48 mx-auto border p-2 rounded"
+        />
+      )}
 
-          {qr && (
-            <img src={qr} alt="QR Code" className="w-48 h-48 mx-auto border rounded" />
-          )}
+      <p>Enter the 6-digit code from your authenticator app.</p>
 
-          <div className="space-y-2">
-            <Input
-              className="bg-black border-gray-700 text-white"
-              placeholder="Enter 6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-          </div>
+      <Input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="123456"
+        className="text-black"
+      />
 
-          <Button onClick={verify} className="w-full bg-yellow-600 hover:bg-yellow-500">
-            Verify & Enable
-          </Button>
-        </CardContent>
-      </Card>
+      <Button onClick={verifyMFA} className="w-full bg-yellow-500 text-black">
+        Verify & Enable MFA
+      </Button>
     </div>
   );
 }
