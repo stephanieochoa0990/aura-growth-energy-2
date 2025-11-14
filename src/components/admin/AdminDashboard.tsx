@@ -117,44 +117,49 @@ const AdminDashboard: React.FC = () => {
     }
   };
   const fetchDashboardStats = async () => {
-    try {
-      // Fetch total students
-      const { count: totalStudents } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact' })
-        .eq('role', 'student');
+  try {
+    // Total students (profiles where NOT admin)
+    const { count: totalStudents } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact' })
+      .or('is_admin.eq.false,is_admin.is.null');
 
-      // Fetch active today
-      const today = new Date().toISOString().split('T')[0];
-      const { count: activeToday } = await supabase
-        .from('user_progress')
-        .select('*', { count: 'exact' })
-        .gte('last_accessed', today);
+    // Active today
+    const today = new Date().toISOString().split('T')[0];
+    const { count: activeToday } = await supabase
+      .from('user_progress')
+      .select('*', { count: 'exact' })
+      .gte('last_accessed', today);
 
-      // Fetch certificates issued
-      const { count: certificatesIssued } = await supabase
-        .from('certificates')
-        .select('*', { count: 'exact' });
+    // Certificates
+    const { count: certificatesIssued } = await supabase
+      .from('certificates')
+      .select('*', { count: 'exact' });
 
-      // Calculate completion rate
-      const { data: completions } = await supabase
-        .from('user_progress')
-        .select('days_completed');
-      
-      const completionRate = completions && completions.length > 0
-        ? Math.round((completions.filter(c => c.days_completed?.length >= 7).length / completions.length) * 100)
+    // Completion rate
+    const { data: completions } = await supabase
+      .from('user_progress')
+      .select('days_completed');
+
+    const completionRate =
+      completions && completions.length > 0
+        ? Math.round(
+            (completions.filter(c => c.days_completed?.length >= 7).length /
+              completions.length) *
+              100
+          )
         : 0;
 
-      setStats({
-        totalStudents: totalStudents || 0,
-        activeToday: activeToday || 0,
-        completionRate,
-        certificatesIssued: certificatesIssued || 0
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
+    setStats({
+      totalStudents: totalStudents || 0,
+      activeToday: activeToday || 0,
+      completionRate,
+      certificatesIssued: certificatesIssued || 0,
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+  }
+};
 
   if (loading) {
     return (
@@ -265,42 +270,41 @@ const AdminDashboard: React.FC = () => {
             </TabsContent>
           )}
 
+{hasPermission('can_manage_users') && (
+  <TabsContent value="students">
+    <StudentManagement userRole="admin" />
+  </TabsContent>
+)}
 
-          {hasPermission('can_manage_users') && (
-            <TabsContent value="students">
-              <StudentManagement userRole={userProfile?.role || 'instructor'} />
-            </TabsContent>
-          )}
+{hasPermission('can_view_analytics') && (
+  <TabsContent value="analytics">
+    <Analytics userRole="admin" />
+  </TabsContent>
+)}
 
-          {hasPermission('can_view_analytics') && (
-            <TabsContent value="analytics">
-              <Analytics userRole={userProfile?.role || 'instructor'} />
-            </TabsContent>
-          )}
+{hasPermission('can_edit_content') && (
+  <TabsContent value="content">
+    <ContentManager userRole="admin" />
+  </TabsContent>
+)}
 
-          {hasPermission('can_edit_content') && (
-            <TabsContent value="content">
-              <ContentManager userRole={userProfile?.role || 'instructor'} />
-            </TabsContent>
-          )}
+{hasPermission('can_publish_content') && (
+  <TabsContent value="bulk">
+    <BulkContentManager />
+  </TabsContent>
+)}
 
-          {hasPermission('can_publish_content') && (
-            <TabsContent value="bulk">
-              <BulkContentManager />
-            </TabsContent>
-          )}
+{hasPermission('can_manage_sessions') && (
+  <TabsContent value="sessions">
+    <LiveSessionManager userRole="admin" />
+  </TabsContent>
+)}
 
-          {hasPermission('can_manage_sessions') && (
-            <TabsContent value="sessions">
-              <LiveSessionManager userRole={userProfile?.role || 'instructor'} />
-            </TabsContent>
-          )}
-
-          {hasPermission('can_send_notifications') && (
-            <TabsContent value="announcements">
-              <AnnouncementManager userRole={userProfile?.role || 'instructor'} />
-            </TabsContent>
-          )}
+{hasPermission('can_send_notifications') && (
+  <TabsContent value="announcements">
+    <AnnouncementManager userRole="admin" />
+  </TabsContent>
+)}
 
           {hasPermission('can_moderate_reviews') && (
             <TabsContent value="reviews">
