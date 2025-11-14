@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sha1 } from 'js-sha1';
+import { sha1 } from 'js-sha1';  // <-- Correct import
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 
 async function checkPasswordLeaked(password: string) {
-  const hash = sha1(password).toUpperCase();
+  const hash = sha1(password).toString().toUpperCase();  // <-- FIX HERE
   const prefix = hash.slice(0, 5);
   const suffix = hash.slice(5);
   const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
@@ -72,10 +72,11 @@ export default function AuthForm() {
           });
 
           navigate('/student-welcome');
+          return;
         }
 
       } else {
-        // ------- SIGN IN -------
+        // SIGN IN FLOW
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -91,10 +92,10 @@ export default function AuthForm() {
             .maybeSingle();
 
           if (profile?.is_admin) {
-            // check MFA
+            // Check MFA
             const { data: factors } = await supabase.auth.mfa.listFactors();
 
-            if (!factors.totp || factors.totp.length === 0) {
+            if (!factors?.totp || factors.totp.length === 0) {
               navigate('/mfa-setup');
               return;
             }
@@ -114,6 +115,7 @@ export default function AuthForm() {
           });
 
           navigate('/student-welcome');
+          return;
         }
       }
 
@@ -123,6 +125,7 @@ export default function AuthForm() {
         description: error.message,
         variant: "destructive"
       });
+
     } finally {
       setLoading(false);
     }
