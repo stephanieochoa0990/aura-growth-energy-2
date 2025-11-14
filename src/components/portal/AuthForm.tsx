@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sha1 } from 'js-sha1';  // <-- Correct import
+import sha1 from "js-sha1/src/sha1.js";  // <-- Correct import
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
