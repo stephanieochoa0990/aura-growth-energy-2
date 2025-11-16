@@ -33,7 +33,7 @@ interface UserProfile {
   is_admin?: boolean;
 }
 
-// 🔐 Safely narrow roles so we never pass "student"
+// Safely narrow roles so we never pass "student"
 const safeRole = (
   role: string | null | undefined
 ): "admin" | "instructor" => {
@@ -72,9 +72,17 @@ const AdminDashboard: React.FC = () => {
         .eq('id', user.id)
         .single();
 
-      const adminRoles = ['super_admin', 'content_manager', 'moderator', 'support_staff'];
+      // NEW fixed admin roles list — includes "admin"
+      const adminRoles = ['admin', 'super_admin', 'content_manager', 'moderator', 'support_staff'];
 
-      if (!profile || (!profile.is_admin && !adminRoles.includes(profile.role))) {
+      const isAllowed =
+        profile &&
+        (
+          profile.is_admin === true ||         // database boolean
+          adminRoles.includes(profile.role)    // allowed by role
+        );
+
+      if (!isAllowed) {
         toast({
           title: "Access Denied",
           description: "You don't have admin privileges.",
@@ -96,7 +104,6 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDashboardStats = async () => {
     try {
-
       const { count: totalStudents } = await supabase
         .from('public.profiles')
         .select('*', { count: 'exact' })
@@ -339,7 +346,6 @@ const AdminDashboard: React.FC = () => {
               <UserRoleAssignment />
             </TabsContent>
           )}
-
         </Tabs>
 
         <div className="mt-8 text-center">
