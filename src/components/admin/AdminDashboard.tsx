@@ -5,13 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
-import { 
-  Users, 
+
+import {
+  Users,
   Activity,
-  TrendingUp, 
+  TrendingUp,
   Award,
   LogOut
 } from 'lucide-react';
+
 import StudentManagement from './StudentManagement';
 import Analytics from './Analytics';
 import ContentManager from './ContentManager';
@@ -23,6 +25,7 @@ import ReviewAnalytics from './ReviewAnalytics';
 import RoleManager from './RoleManager';
 import UserRoleAssignment from './UserRoleAssignment';
 import ComprehensiveAnalytics from './ComprehensiveAnalytics';
+
 import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
@@ -33,12 +36,11 @@ interface UserProfile {
   is_admin?: boolean;
 }
 
+// Only allow admin or instructor (never student)
 const safeRole = (
   role: string | null | undefined
 ): "admin" | "instructor" => {
-  return role === "admin" || role === "instructor"
-    ? role
-    : "instructor";
+  return role === "admin" || role === "instructor" ? role : "instructor";
 };
 
 const AdminDashboard: React.FC = () => {
@@ -55,6 +57,9 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
 
+  // --------------------------
+  // CHECK ADMIN ACCESS
+  // --------------------------
   useEffect(() => {
     checkAdminAccess();
     fetchDashboardStats();
@@ -100,6 +105,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // --------------------------
+  // FETCH METRICS
+  // --------------------------
   const fetchDashboardStats = async () => {
     try {
       const { count: totalStudents } = await supabase
@@ -122,13 +130,14 @@ const AdminDashboard: React.FC = () => {
         .from('user_progress')
         .select('days_completed');
 
-      const completionRate = completions && completions.length > 0
-        ? Math.round(
-            (completions.filter(c => c.days_completed?.length >= 7).length /
-              completions.length) *
+      const completionRate =
+        completions && completions.length > 0
+          ? Math.round(
+              (completions.filter(c => c.days_completed?.length >= 7).length /
+                completions.length) *
               100
-          )
-        : 0;
+            )
+          : 0;
 
       setStats({
         totalStudents: totalStudents || 0,
@@ -142,6 +151,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // --------------------------
+  // SIGN OUT
+  // --------------------------
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -156,6 +168,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // --------------------------
+  // LOADING INDICATOR
+  // --------------------------
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -164,11 +179,16 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
+  // --------------------------
+  // MAIN RETURN
+  // --------------------------
   return (
     <div className="min-h-screen bg-ivory lotus-pattern p-6">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Admin Header */}
+
+        {/* --------------------------
+            HEADER
+        -------------------------- */}
         <div className="mb-8 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-display gold-gradient-text">Admin Dashboard</h1>
@@ -190,63 +210,39 @@ const AdminDashboard: React.FC = () => {
           </Button>
         </div>
 
-        {/* ⭐ NEW: FULL STUDENT VIEW NAVIGATION PANEL */}
+        {/* --------------------------
+            STUDENT PREVIEW PANEL
+        -------------------------- */}
         <div className="w-full mt-6 p-4 bg-white/70 rounded-xl shadow-sm border border-gold/20">
           <h2 className="text-xl font-display mb-3 gold-gradient-text">
             Student View (Preview & Edit)
           </h2>
 
           <div className="flex flex-wrap gap-3">
-
-            <Button variant="outline" onClick={() => navigate('/daily')}>
-              Daily Lessons
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
-              Student Dashboard
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/resources')}>
-              Resources Library
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/progress')}>
-              Progress
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/forum')}>
-              Forum
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/messages')}>
-              Messages
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/offline')}>
-              Offline Mode
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/live')}>
-              Live Sessions
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/certificate')}>
-              Certificate Page
-            </Button>
-
-            <Button variant="outline" onClick={() => navigate('/email')}>
-              Email Tool
-            </Button>
-
+            <Button variant="outline" onClick={() => navigate('/class/daily')}>Daily Lessons</Button>
+            <Button variant="outline" onClick={() => navigate('/class/dashboard')}>Student Dashboard</Button>
+            <Button variant="outline" onClick={() => navigate('/class/resources')}>Resources Library</Button>
+            <Button variant="outline" onClick={() => navigate('/class/progress')}>Progress</Button>
+            <Button variant="outline" onClick={() => navigate('/class/forum')}>Forum</Button>
+            <Button variant="outline" onClick={() => navigate('/class/messages')}>Messages</Button>
+            <Button variant="outline" onClick={() => navigate('/class/offline')}>Offline Mode</Button>
+            <Button variant="outline" onClick={() => navigate('/class/live')}>Live Sessions</Button>
+            <Button variant="outline" onClick={() => navigate('/class/certificate')}>Certificate Page</Button>
+            <Button variant="outline" onClick={() => navigate('/class/email')}>Email Tool</Button>
           </div>
         </div>
 
-        {/* Metric Cards */}
+        {/* --------------------------
+            METRIC CARDS
+        -------------------------- */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 mt-8">
+
           <Card className="lotus-card">
             <CardHeader className="flex justify-between pb-2">
               <CardTitle className="text-sm">Total Students</CardTitle>
-              <div className="p-2 rounded-full bg-gold/10"><Users className="h-4 w-4 text-gold" /></div>
+              <div className="p-2 rounded-full bg-gold/10">
+                <Users className="h-4 w-4 text-gold" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl gold-text">{stats.totalStudents}</div>
@@ -256,7 +252,9 @@ const AdminDashboard: React.FC = () => {
           <Card className="lotus-card">
             <CardHeader className="flex justify-between pb-2">
               <CardTitle className="text-sm">Active Today</CardTitle>
-              <div className="p-2 rounded-full bg-gold/10"><Activity className="h-4 w-4 text-gold" /></div>
+              <div className="p-2 rounded-full bg-gold/10">
+                <Activity className="h-4 w-4 text-gold" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl gold-text">{stats.activeToday}</div>
@@ -266,7 +264,9 @@ const AdminDashboard: React.FC = () => {
           <Card className="lotus-card">
             <CardHeader className="flex justify-between pb-2">
               <CardTitle className="text-sm">Completion Rate</CardTitle>
-              <div className="p-2 rounded-full bg-gold/10"><TrendingUp className="h-4 w-4 text-gold" /></div>
+              <div className="p-2 rounded-full bg-gold/10">
+                <TrendingUp className="h-4 w-4 text-gold" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl gold-text">{stats.completionRate}%</div>
@@ -276,15 +276,20 @@ const AdminDashboard: React.FC = () => {
           <Card className="lotus-card">
             <CardHeader className="flex justify-between pb-2">
               <CardTitle className="text-sm">Certificates</CardTitle>
-              <div className="p-2 rounded-full bg-gold/10"><Award className="h-4 w-4 text-gold" /></div>
+              <div className="p-2 rounded-full bg-gold/10">
+                <Award className="h-4 w-4 text-gold" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl gold-text">{stats.certificatesIssued}</div>
             </CardContent>
           </Card>
+
         </div>
 
-        {/* Admin Tabs */}
+        {/* --------------------------
+            ADMIN TABS (PERMISSION SECURED)
+        -------------------------- */}
         <Tabs defaultValue="students" className="space-y-4">
           <TabsList className="grid grid-cols-11">
 
@@ -331,6 +336,7 @@ const AdminDashboard: React.FC = () => {
             {hasPermission('can_manage_users') && (
               <TabsTrigger value="users">User Roles</TabsTrigger>
             )}
+
           </TabsList>
 
           {hasPermission('can_view_analytics') && (
@@ -398,8 +404,12 @@ const AdminDashboard: React.FC = () => {
               <UserRoleAssignment />
             </TabsContent>
           )}
+
         </Tabs>
 
+        {/* --------------------------
+            FOOTER
+        -------------------------- */}
         <div className="mt-8 text-center">
           <Button variant="outline" onClick={() => navigate('/')}>
             Back to Main Site
