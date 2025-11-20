@@ -88,14 +88,14 @@ const Analytics: React.FC<AnalyticsProps> = ({ userRole }) => {
         `)
         .order('days_completed', { ascending: false })
         .limit(5);
+setTopPerformers(
+  (performers || []).map(p => ({
+    name: p.profiles?.[0]?.full_name || "Unknown",
+    email: p.profiles?.[0]?.email || "Unknown",
+    daysCompleted: p.days_completed?.length || 0
+  }))
+);
 
-      if (performers) {
-        setTopPerformers(performers.map(p => ({
-          name: p.profiles.full_name,
-          email: p.profiles.email,
-          daysCompleted: p.days_completed?.length || 0
-        })));
-      }
 
       // Fetch engagement data for the last 7 days
       const last7Days = Array.from({ length: 7 }, (_, i) => {

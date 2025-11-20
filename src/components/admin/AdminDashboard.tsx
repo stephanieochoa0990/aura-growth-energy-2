@@ -33,7 +33,6 @@ interface UserProfile {
   is_admin?: boolean;
 }
 
-// Safely narrow roles so we never pass "student"
 const safeRole = (
   role: string | null | undefined
 ): "admin" | "instructor" => {
@@ -72,14 +71,13 @@ const AdminDashboard: React.FC = () => {
         .eq('id', user.id)
         .single();
 
-      // NEW fixed admin roles list — includes "admin"
       const adminRoles = ['admin', 'super_admin', 'content_manager', 'moderator', 'support_staff'];
 
       const isAllowed =
         profile &&
         (
-          profile.is_admin === true ||         // database boolean
-          adminRoles.includes(profile.role)    // allowed by role
+          profile.is_admin === true ||
+          adminRoles.includes(profile.role)
         );
 
       if (!isAllowed) {
@@ -170,6 +168,7 @@ const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-ivory lotus-pattern p-6">
       <div className="max-w-7xl mx-auto">
         
+        {/* Admin Header */}
         <div className="mb-8 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-display gold-gradient-text">Admin Dashboard</h1>
@@ -191,7 +190,59 @@ const AdminDashboard: React.FC = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* ⭐ NEW: FULL STUDENT VIEW NAVIGATION PANEL */}
+        <div className="w-full mt-6 p-4 bg-white/70 rounded-xl shadow-sm border border-gold/20">
+          <h2 className="text-xl font-display mb-3 gold-gradient-text">
+            Student View (Preview & Edit)
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+
+            <Button variant="outline" onClick={() => navigate('/daily')}>
+              Daily Lessons
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              Student Dashboard
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/resources')}>
+              Resources Library
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/progress')}>
+              Progress
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/forum')}>
+              Forum
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/messages')}>
+              Messages
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/offline')}>
+              Offline Mode
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/live')}>
+              Live Sessions
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/certificate')}>
+              Certificate Page
+            </Button>
+
+            <Button variant="outline" onClick={() => navigate('/email')}>
+              Email Tool
+            </Button>
+
+          </div>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 mt-8">
           <Card className="lotus-card">
             <CardHeader className="flex justify-between pb-2">
               <CardTitle className="text-sm">Total Students</CardTitle>
@@ -233,6 +284,7 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </div>
 
+        {/* Admin Tabs */}
         <Tabs defaultValue="students" className="space-y-4">
           <TabsList className="grid grid-cols-11">
 
