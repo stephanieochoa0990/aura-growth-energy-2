@@ -21,6 +21,7 @@ interface RolePermissions {
 export const usePermissions = () => {
   const [permissions, setPermissions] = useState<RolePermissions>({});
   const [role, setRole] = useState<string>('student');
+  const [isAdminFlag, setIsAdminFlag] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,20 +36,23 @@ export const usePermissions = () => {
         return;
       }
 
+      // Load profile with BOTH role and is_admin
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_admin')
         .eq('id', user.id)
         .single();
 
-      if (profile?.role) {
-        setRole(profile.role);
-        
+      if (profile) {
+        setRole(profile.role || 'student');
+        setIsAdminFlag(profile.is_admin === true);
+
+        // Load permissions based on role
         const { data: roleData } = await supabase
           .from('roles')
           .select('permissions')
           .eq('name', profile.role)
-          .single();
+          .maybeSingle();
 
         if (roleData?.permissions) {
           setPermissions(roleData.permissions);
@@ -59,6 +63,19 @@ export const usePermissions = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // True if any admin flag OR admin role is present
+  const isAdmin = () => {
+    if (isAdminFlag) return true; // explicit admin override
+
+    return [
+      'admin',          // added your admin role
+      'super_admin',
+      'content_manager',
+      'moderator',
+      'support_staff'
+    ].includes(role);
   };
 
   const hasPermission = (permission: keyof RolePermissions): boolean => {
@@ -73,18 +90,14 @@ export const usePermissions = () => {
     return perms.every(p => permissions[p] === true);
   };
 
-  const isAdmin = () => {
-    return ['super_admin', 'content_manager', 'moderator', 'support_staff'].includes(role);
-  };
-
   return {
     permissions,
     role,
+    isAdmin: isAdmin(),
     loading,
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
-    isAdmin,
     refresh: loadPermissions
   };
 };
