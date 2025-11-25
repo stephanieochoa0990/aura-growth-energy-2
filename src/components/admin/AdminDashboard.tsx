@@ -71,10 +71,11 @@ const AdminDashboard: React.FC = () => {
       if (!user) return navigate('/admin/login');
 
       const { data: profile } = await supabase
-        .from('public.profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+  .from('profiles')
+  .select('*')
+  .eq('id', user.id)
+  .single();
+
 
       const adminRoles = ['admin', 'super_admin', 'content_manager', 'moderator', 'support_staff'];
 
