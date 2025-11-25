@@ -9,7 +9,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Verify from "./pages/Verify";
 import AdminLogin from "./pages/AdminLogin";
-import SimpleAdminDashboard from "./components/admin/SimpleAdminDashboard";
+
+// ⭐ NEW: import your real admin dashboard
+import AdminDashboard from "./components/admin/AdminDashboard";
 
 import Day1 from "./pages/Day1";
 import Day2 from "./pages/Day2";
@@ -24,10 +26,8 @@ import AdminSetup from "./pages/AdminSetup";
 import ResetPassword from "./pages/ResetPassword";
 import StudentWelcome from "./pages/StudentWelcome";
 
-
-// ★ NEW: import MFA setup page
+// ⭐ MFA
 import MFASetup from "./pages/MFASetup";
-
 
 const queryClient = new QueryClient();
 
@@ -42,7 +42,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/verify" element={<Verify />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<SimpleAdminDashboard />} />
+
+            {/* ⭐ NEW: Your updated admin route */}
+            <Route path="/admin" element={<AdminDashboard />} />
 
             <Route path="/day-1" element={<Day1 />} />
             <Route path="/day-2" element={<Day2 />} />
@@ -57,7 +59,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/student-welcome" element={<StudentWelcome />} />
 
-            {/* ⭐ NEW MFA route */}
+            {/* MFA */}
             <Route path="/mfa-setup" element={<MFASetup />} />
 
             <Route path="*" element={<NotFound />} />
