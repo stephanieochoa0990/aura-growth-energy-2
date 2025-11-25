@@ -10,7 +10,6 @@ import NotFound from "./pages/NotFound";
 import Verify from "./pages/Verify";
 import AdminLogin from "./pages/AdminLogin";
 
-// ⭐ NEW: import your real admin dashboard
 import AdminDashboard from "./components/admin/AdminDashboard";
 
 import Day1 from "./pages/Day1";
@@ -26,7 +25,6 @@ import AdminSetup from "./pages/AdminSetup";
 import ResetPassword from "./pages/ResetPassword";
 import StudentWelcome from "./pages/StudentWelcome";
 
-// ⭐ MFA
 import MFASetup from "./pages/MFASetup";
 
 const queryClient = new QueryClient();
@@ -43,9 +41,10 @@ const App = () => (
             <Route path="/verify" element={<Verify />} />
             <Route path="/admin/login" element={<AdminLogin />} />
 
-            {/* ⭐ NEW: Your updated admin route */}
+            {/* -------- ADMIN ROUTE -------- */}
             <Route path="/admin" element={<AdminDashboard />} />
 
+            {/* -------- STUDENT NORMAL ROUTES -------- */}
             <Route path="/day-1" element={<Day1 />} />
             <Route path="/day-2" element={<Day2 />} />
             <Route path="/day-3" element={<Day3 />} />
@@ -59,9 +58,24 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/student-welcome" element={<StudentWelcome />} />
 
-            {/* MFA */}
+            {/* -------- MFA -------- */}
             <Route path="/mfa-setup" element={<MFASetup />} />
 
+            {/* -------- MIRROR STUDENT ROUTES FOR ADMIN PREVIEW -------- */}
+            <Route path="/class/daily" element={<Day1 />} />
+            <Route path="/class/dashboard" element={<Index />} />
+            <Route path="/class/resources" element={<IntegrationToolkit />} />
+            <Route path="/class/progress" element={<StudentWelcome />} />
+
+            {/* Placeholder routes — replace later */}
+            <Route path="/class/forum" element={<NotFound />} />
+            <Route path="/class/messages" element={<NotFound />} />
+            <Route path="/class/offline" element={<NotFound />} />
+            <Route path="/class/live" element={<Day7 />} />
+            <Route path="/class/certificate" element={<NotFound />} />
+            <Route path="/class/email" element={<NotFound />} />
+
+            {/* -------- FALLBACK -------- */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
@@ -71,4 +85,3 @@ const App = () => (
 );
 
 export default App;
-
