@@ -1,109 +1,89 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
 
-export default function AdminDay2Editor() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [body, setBody] = useState("");
-  const [rowId, setRowId] = useState<string | null>(null);
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Verify from "./pages/Verify";
+import AdminLogin from "./pages/AdminLogin";
 
-  useEffect(() => {
-    loadLesson();
-  }, []);
+import AdminDashboard from "./components/admin/AdminDashboard";
 
-  const loadLesson = async () => {
-    const { data, error } = await supabase
-      .from("course_content")
-      .select("*")
-      .eq("day_number", 2)
-      .single();
+import Day1 from "./pages/Day1";
+import Day2 from "./pages/Day2";
+import Day3 from "./pages/Day3";
+import Day4 from "./pages/Day4";
+import Day5 from "./pages/Day5";
+import Day6 from "./pages/Day6";
+import Day7 from "./pages/Day7";
 
-    if (error) {
-      console.error(error);
-      toast({ title: "Error loading lesson" });
-    } else if (data) {
-      setRowId(data.id);
-      setTitle(data.title ?? "");
-      setDescription(data.description ?? "");
-      setBody(data.content_body?.text ?? "");
-    }
+import IntegrationToolkit from "./pages/IntegrationToolkit";
+import AdminSetup from "./pages/AdminSetup";
+import ResetPassword from "./pages/ResetPassword";
+import StudentWelcome from "./pages/StudentWelcome";
 
-    setLoading(false);
-  };
+import MFASetup from "./pages/MFASetup";
 
-  const saveLesson = async () => {
-    const payload = {
-      day_number: 2,
-      title,
-      description,
-      content_body: { text: body },
-      content_type: "lesson",
-      is_published: true,
-    };
+// ADMIN LESSON EDITORS
+import AdminDay1Editor from "./pages/admin-lessons/AdminDay1Editor";
+import AdminDay2Editor from "./pages/admin-lessons/AdminDay2Editor";
+import AdminDay3Editor from "./pages/admin-lessons/AdminDay3Editor";
+import AdminDay4Editor from "./pages/admin-lessons/AdminDay4Editor";
+import AdminDay5Editor from "./pages/admin-lessons/AdminDay5Editor";
+import AdminDay6Editor from "./pages/admin-lessons/AdminDay6Editor";
+import AdminDay7Editor from "./pages/admin-lessons/AdminDay7Editor";
 
-    let response;
+const queryClient = new QueryClient();
 
-    if (rowId) {
-      response = await supabase
-        .from("course_content")
-        .update(payload)
-        .eq("id", rowId)
-        .select();
-    } else {
-      response = await supabase
-        .from("course_content")
-        .insert(payload)
-        .select();
-    }
+const App = () => (
+  <ThemeProvider defaultTheme="light">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Index />} />
+            <Route path="/verify" element={<Verify />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-    if (response.error) {
-      toast({
-        title: "Error saving lesson",
-        description: response.error.message,
-      });
-    } else {
-      toast({ title: "Saved!", description: "Lesson updated." });
-    }
-  };
+            {/* Admin */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/day-1" element={<AdminDay1Editor />} />
+            <Route path="/admin/day-2" element={<AdminDay2Editor />} />
+            <Route path="/admin/day-3" element={<AdminDay3Editor />} />
+            <Route path="/admin/day-4" element={<AdminDay4Editor />} />
+            <Route path="/admin/day-5" element={<AdminDay5Editor />} />
+            <Route path="/admin/day-6" element={<AdminDay6Editor />} />
+            <Route path="/admin/day-7" element={<AdminDay7Editor />} />
 
-  if (loading) return <p>Loading...</p>;
+            {/* Student Lessons */}
+            <Route path="/day-1" element={<Day1 />} />
+            <Route path="/day-2" element={<Day2 />} />
+            <Route path="/day-3" element={<Day3 />} />
+            <Route path="/day-4" element={<Day4 />} />
+            <Route path="/day-5" element={<Day5 />} />
+            <Route path="/day-6" element={<Day6 />} />
+            <Route path="/day-7" element={<Day7 />} />
 
-  return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">Edit Day 2 Lesson</h1>
+            {/* Extras */}
+            <Route path="/integration" element={<IntegrationToolkit />} />
+            <Route path="/admin-setup" element={<AdminSetup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/student-welcome" element={<StudentWelcome />} />
+            <Route path="/mfa-setup" element={<MFASetup />} />
 
-      <div className="space-y-3">
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Lesson Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+            {/* Fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
+);
 
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Short Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-
-        <textarea
-          className="w-full h-40 border p-2 rounded"
-          placeholder="Lesson Text Body"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
-
-        <button
-          className="px-4 py-2 bg-yellow-600 text-white rounded"
-          onClick={saveLesson}
-        >
-          Save Lesson
-        </button>
-      </div>
-    </div>
-  );
-}
+export default App;
