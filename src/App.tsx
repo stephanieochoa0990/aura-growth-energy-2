@@ -30,17 +30,12 @@ import MFASetup from "./pages/MFASetup";
 // ---- Admin Dashboard ----
 import AdminDashboard from "./components/admin/AdminDashboard";
 
-// ---- Admin Lesson Editors ----
-import AdminDay1Editor from "./pages/admin-lessons/AdminDay1Editor";
-import AdminDay2Editor from "./pages/admin-lessons/AdminDay2Editor";
-import AdminDay3Editor from "./pages/admin-lessons/AdminDay3Editor";
-import AdminDay4Editor from "./pages/admin-lessons/AdminDay4Editor";
-import AdminDay5Editor from "./pages/admin-lessons/AdminDay5Editor";
-import AdminDay6Editor from "./pages/admin-lessons/AdminDay6Editor";
-import AdminDay7Editor from "./pages/admin-lessons/AdminDay7Editor";
+// ---- NEW Dynamic Admin Lesson Editor ----
+import AdminLessonEditor from "./pages/admin-lessons/AdminLessonEditor";
 
-// ---- Daily Lessons (Admin Preview) ----
+// ---- Admin Preview ----
 import DailyLessons from "./pages/DailyLessons";
+
 
 const queryClient = new QueryClient();
 
@@ -86,18 +81,15 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
 
             {/* -------------------------
-                ADMIN LESSON EDITORS
+                NEW 1-Page Dynamic Admin Lesson Editor
             -------------------------- */}
-            <Route path="/admin/lessons/day-1" element={<AdminDay1Editor />} />
-            <Route path="/admin/lessons/day-2" element={<AdminDay2Editor />} />
-            <Route path="/admin/lessons/day-3" element={<AdminDay3Editor />} />
-            <Route path="/admin/lessons/day-4" element={<AdminDay4Editor />} />
-            <Route path="/admin/lessons/day-5" element={<AdminDay5Editor />} />
-            <Route path="/admin/lessons/day-6" element={<AdminDay6Editor />} />
-            <Route path="/admin/lessons/day-7" element={<AdminDay7Editor />} />
+            <Route 
+              path="/admin/lessons/day/:dayNumber" 
+              element={<AdminLessonEditor />} 
+            />
 
             {/* -------------------------
-                ADMIN PREVIEW PAGES
+                ADMIN PREVIEW
             -------------------------- */}
             <Route path="/class/daily" element={<DailyLessons />} />
 

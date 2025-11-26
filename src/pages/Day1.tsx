@@ -1,37 +1,40 @@
-import React, { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import DayContent from '@/components/portal/DayContent';
-import { useDayContent } from '@/hooks/useDayContent';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function Day1() {
-  const location = useLocation();
-  const continueVideoIdRef = useRef<string | null>(null);
-  const timestampRef = useRef<number | null>(null);
-  const { title, description, sections, loading } = useDayContent(1);
+  const [loading, setLoading] = useState(true);
+  const [lesson, setLesson] = useState<any>(null);
 
   useEffect(() => {
-    if (location.state?.continueVideoId) {
-      continueVideoIdRef.current = location.state.continueVideoId;
-      timestampRef.current = location.state.timestamp || 0;
-    }
-  }, [location]);
+    loadLesson();
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
+  const loadLesson = async () => {
+    const { data, error } = await supabase
+      .from("course_content")
+      .select("*")
+      .eq("day_number", 1)
+      .single();
+
+    if (error) {
+      console.error(error);
+    } else {
+      setLesson(data);
+    }
+    setLoading(false);
+  };
+
+  if (loading) return <p>Loading...</p>;
+  if (!lesson) return <p>No lesson found.</p>;
 
   return (
-    <DayContent
-      dayNumber={1}
-      title={title}
-      description={description}
-      sections={sections}
-      continueVideoId={continueVideoIdRef.current}
-      continueTimestamp={timestampRef.current}
-    />
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-4xl font-bold mb-2">{lesson.title}</h1>
+      <p className="text-gray-700 mb-6">{lesson.description}</p>
+
+      <div className="prose whitespace-pre-wrap">
+        {lesson.content_body?.text}
+      </div>
+    </div>
   );
 }
