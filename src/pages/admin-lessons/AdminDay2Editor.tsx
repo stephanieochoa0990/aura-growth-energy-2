@@ -8,8 +8,9 @@ export default function AdminDay2Editor() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
-  const [rowId, setRowId] = useState<string | null>(null);
+  const [rowId, setRowId] = useState(null);
 
+  // Load existing lesson
   useEffect(() => {
     loadLesson();
   }, []);
@@ -26,9 +27,9 @@ export default function AdminDay2Editor() {
       toast({ title: "Error loading lesson" });
     } else if (data) {
       setRowId(data.id);
-      setTitle(data.title ?? "");
-      setDescription(data.description ?? "");
-      setBody(data.content_body?.text ?? "");
+      setTitle(data.title || "");
+      setDescription(data.description || "");
+      setBody(data.content_body?.text || "");
     }
 
     setLoading(false);
@@ -41,29 +42,21 @@ export default function AdminDay2Editor() {
       description,
       content_body: { text: body },
       content_type: "lesson",
-      is_published: true,
+      is_published: true
     };
 
     let response;
-
     if (rowId) {
       response = await supabase
         .from("course_content")
         .update(payload)
-        .eq("id", rowId)
-        .select();
+        .eq("id", rowId);
     } else {
-      response = await supabase
-        .from("course_content")
-        .insert(payload)
-        .select();
+      response = await supabase.from("course_content").insert(payload).select();
     }
 
     if (response.error) {
-      toast({
-        title: "Error saving lesson",
-        description: response.error.message,
-      });
+      toast({ title: "Error saving lesson", description: response.error.message });
     } else {
       toast({ title: "Saved!", description: "Lesson updated." });
     }
