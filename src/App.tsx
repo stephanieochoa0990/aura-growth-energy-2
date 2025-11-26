@@ -27,14 +27,8 @@ import StudentWelcome from "./pages/StudentWelcome";
 
 import MFASetup from "./pages/MFASetup";
 
-// ADMIN LESSON EDITORS
-import AdminDay1Editor from "./pages/admin-lessons/AdminDay1Editor";
-import AdminDay2Editor from "./pages/admin-lessons/AdminDay2Editor";
-import AdminDay3Editor from "./pages/admin-lessons/AdminDay3Editor";
-import AdminDay4Editor from "./pages/admin-lessons/AdminDay4Editor";
-import AdminDay5Editor from "./pages/admin-lessons/AdminDay5Editor";
-import AdminDay6Editor from "./pages/admin-lessons/AdminDay6Editor";
-import AdminDay7Editor from "./pages/admin-lessons/AdminDay7Editor";
+// ⭐ NEW: daily lessons preview page
+import DailyLessons from "./pages/DailyLessons";
 
 const queryClient = new QueryClient();
 
@@ -46,22 +40,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public */}
+            {/* Public / student routes */}
             <Route path="/" element={<Index />} />
             <Route path="/verify" element={<Verify />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
 
-            {/* Admin */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/day-1" element={<AdminDay1Editor />} />
-            <Route path="/admin/day-2" element={<AdminDay2Editor />} />
-            <Route path="/admin/day-3" element={<AdminDay3Editor />} />
-            <Route path="/admin/day-4" element={<AdminDay4Editor />} />
-            <Route path="/admin/day-5" element={<AdminDay5Editor />} />
-            <Route path="/admin/day-6" element={<AdminDay6Editor />} />
-            <Route path="/admin/day-7" element={<AdminDay7Editor />} />
-
-            {/* Student Lessons */}
             <Route path="/day-1" element={<Day1 />} />
             <Route path="/day-2" element={<Day2 />} />
             <Route path="/day-3" element={<Day3 />} />
@@ -70,12 +52,20 @@ const App = () => (
             <Route path="/day-6" element={<Day6 />} />
             <Route path="/day-7" element={<Day7 />} />
 
-            {/* Extras */}
             <Route path="/integration" element={<IntegrationToolkit />} />
-            <Route path="/admin-setup" element={<AdminSetup />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/student-welcome" element={<StudentWelcome />} />
+
+            {/* Admin auth + setup */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin-setup" element={<AdminSetup />} />
+
+            {/* MFA + password reset */}
             <Route path="/mfa-setup" element={<MFASetup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* ⭐ NEW: admin preview route for daily lessons */}
+            <Route path="/class/daily" element={<DailyLessons />} />
 
             {/* Fallback */}
             <Route path="*" element={<NotFound />} />
