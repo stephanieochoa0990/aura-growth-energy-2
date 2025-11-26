@@ -8,9 +8,8 @@ export default function AdminDay1Editor() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [body, setBody] = useState("");
-  const [rowId, setRowId] = useState(null);
+  const [rowId, setRowId] = useState<string | null>(null);
 
-  // Load existing lesson
   useEffect(() => {
     loadLesson();
   }, []);
@@ -25,11 +24,27 @@ export default function AdminDay1Editor() {
     if (error) {
       console.error(error);
       toast({ title: "Error loading lesson" });
-    } else if (data) {
+      setLoading(false);
+      return;
+    }
+
+    if (data) {
       setRowId(data.id);
-      setTitle(data.title || "");
-      setDescription(data.description || "");
-      setBody(data.content_body?.text || "");
+      setTitle(data.title ?? "");
+      setDescription(data.description ?? "");
+
+      // Load text OR sections
+      let loadedText = "";
+
+      if (data.content_body?.text) {
+        loadedText = data.content_body.text;
+      } else if (data.content_body?.sections) {
+        loadedText = data.content_body.sections
+          .map((s: any) => s.content)
+          .join("\n\n");
+      }
+
+      setBody(loadedText);
     }
 
     setLoading(false);
@@ -40,23 +55,39 @@ export default function AdminDay1Editor() {
       day_number: 1,
       title,
       description,
-      content_body: { text: body },
       content_type: "lesson",
-      is_published: true
+      is_published: true,
+      content_body: {
+        text: body,
+        sections: [
+          {
+            title: title,
+            content: body,
+          },
+        ],
+      },
     };
 
     let response;
+
     if (rowId) {
       response = await supabase
         .from("course_content")
         .update(payload)
-        .eq("id", rowId);
+        .eq("id", rowId)
+        .select();
     } else {
-      response = await supabase.from("course_content").insert(payload).select();
+      response = await supabase
+        .from("course_content")
+        .insert(payload)
+        .select();
     }
 
     if (response.error) {
-      toast({ title: "Error saving lesson", description: response.error.message });
+      toast({
+        title: "Error saving lesson",
+        description: response.error.message,
+      });
     } else {
       toast({ title: "Saved!", description: "Lesson updated." });
     }
@@ -85,7 +116,7 @@ export default function AdminDay1Editor() {
 
         <textarea
           className="w-full h-40 border p-2 rounded"
-          placeholder="Lesson Text Body"
+          placeholder="Lesson Body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
