@@ -1,42 +1,58 @@
 import { useNavigate } from "react-router-dom";
 
-const days = [
-  { slug: "/day-1", label: "Day 1 — The Forgotten Anatomy" },
-  { slug: "/day-2", label: "Day 2 — Biofield Science & Sensing" },
-  { slug: "/day-3", label: "Day 3 — Embodiment & Integration" },
-  { slug: "/day-4", label: "Day 4 — Planetary & Elemental Resonance" },
-  { slug: "/day-5", label: "Day 5 — Magneto-Electric Field" },
-  { slug: "/day-6", label: "Day 6 — Autonomy & Command" },
-  { slug: "/day-7", label: "Day 7 — Council & Integration" },
-];
-
 export default function DailyLessons() {
   const navigate = useNavigate();
 
-  return (
-    <div className="min-h-screen bg-ivory lotus-pattern p-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-display mb-4 gold-gradient-text">
-          Daily Lessons (Preview)
-        </h1>
-        <p className="mb-6 text-charcoal/80">
-          Choose a day to open the student view of that lesson. This is just a
-          navigation page – the actual content still lives in your Day 1–7
-          pages.
-        </p>
+  const days = [
+    { day: 1, title: "The Forgotten Anatomy" },
+    { day: 2, title: "Biofield Science & Sensing" },
+    { day: 3, title: "Embodiment & Integration" },
+    { day: 4, title: "Planetary & Elemental Resonance" },
+    { day: 5, title: "Magneto-Electric Field" },
+    { day: 6, title: "Autonomy & Command" },
+    { day: 7, title: "Council & Integration" },
+  ];
 
-        <div className="space-y-3">
-          {days.map((day) => (
-            <button
-              key={day.slug}
-              onClick={() => navigate(day.slug)}
-              className="w-full flex justify-between items-center px-4 py-3 rounded-lg border border-gold/30 bg-white/80 hover:bg-gold/10 transition"
-            >
-              <span className="text-left">{day.label}</span>
-              <span className="text-sm text-gold font-medium">Open</span>
-            </button>
-          ))}
-        </div>
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        DAILY LESSONS (ADMIN)
+      </h1>
+
+      <p className="mb-6 text-center text-gray-600">
+        Choose PREVIEW to see what students see.  
+        Choose EDIT to update lesson content.
+      </p>
+
+      <div className="space-y-4">
+        {days.map((d) => (
+          <div
+            key={d.day}
+            className="border p-4 rounded-lg flex justify-between items-center bg-white shadow"
+          >
+            <div>
+              <h2 className="text-xl font-semibold">Day {d.day} — {d.title}</h2>
+            </div>
+
+            <div className="flex gap-3">
+              {/* Student preview */}
+              <button
+                onClick={() => navigate(`/day-${d.day}`)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Preview
+              </button>
+
+              {/* Admin edit */}
+              <button
+                onClick={() => navigate(`/admin/lessons/day-${d.day}`)}
+                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
