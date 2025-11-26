@@ -10,13 +10,13 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Verify from "./pages/Verify";
 
-import Day1 from "./pages/Day1";
-import Day2 from "./pages/Day2";
-import Day3 from "./pages/Day3";
-import Day4 from "./pages/Day4";
-import Day5 from "./pages/Day5";
-import Day6 from "./pages/Day6";
-import Day7 from "./pages/Day7";
+import Day1 from "./pages/day-1";
+import Day2 from "./pages/day-2";
+import Day3 from "./pages/day-3";
+import Day4 from "./pages/day-4";
+import Day5 from "./pages/day-5";
+import Day6 from "./pages/day-6";
+import Day7 from "./pages/day-7";
 
 import IntegrationToolkit from "./pages/IntegrationToolkit";
 import StudentWelcome from "./pages/StudentWelcome";
@@ -30,12 +30,11 @@ import MFASetup from "./pages/MFASetup";
 // ---- Admin Dashboard ----
 import AdminDashboard from "./components/admin/AdminDashboard";
 
-// ---- NEW Dynamic Admin Lesson Editor ----
+// ---- Dynamic Admin Lesson Editor ----
 import AdminLessonEditor from "./pages/admin-lessons/AdminLessonEditor";
 
-// ---- Admin Preview ----
+// ---- Admin Preview Pages ----
 import DailyLessons from "./pages/DailyLessons";
-
 
 const queryClient = new QueryClient();
 
@@ -81,15 +80,12 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
 
             {/* -------------------------
-                NEW 1-Page Dynamic Admin Lesson Editor
+                DYNAMIC ADMIN LESSON EDITOR
             -------------------------- */}
-            <Route 
-              path="/admin/lessons/day/:dayNumber" 
-              element={<AdminLessonEditor />} 
-            />
+            <Route path="/admin/lessons/day/:dayNumber" element={<AdminLessonEditor />} />
 
             {/* -------------------------
-                ADMIN PREVIEW
+                ADMIN PREVIEW PAGES
             -------------------------- */}
             <Route path="/class/daily" element={<DailyLessons />} />
 
