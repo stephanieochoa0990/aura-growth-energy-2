@@ -3,18 +3,64 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import DayContent from './DayContent';
 
-interface DailyContentProps {
-  currentDay: number;
-  userId: string;
+type BlockType = 'text' | 'video';
+
+interface LessonBlock {
+  id: string;
+  type: BlockType;
+  content?: string | null;
+  url?: string | null;
 }
 
-export default function DailyContent({ currentDay, userId: _userId }: DailyContentProps) {
+interface LessonSection {
+  id: string;
+  title: string;
+  number: number;
+  blocks: LessonBlock[];
+}
+
+export default function DailyContent({ currentDay, userId: _userId }: { currentDay: number; userId: string }) {
   const { toast } = useToast();
   const [title, setTitle] = useState(`Day ${currentDay}`);
   const [description, setDescription] = useState('');
-  const [sections, setSections] = useState<any[]>([]);
-  const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined);
+  const [sections, setSections] = useState<LessonSection[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const normalizeContent = (body: any, fallbackTitle: string): LessonSection[] => {
+    if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
+      return body.map((section: any, idx: number) => ({
+        id: section.id || `section-${idx}`,
+        title: section.title || fallbackTitle || `Section ${idx + 1}`,
+        number: section.number ?? idx + 1,
+        blocks: Array.isArray(section.blocks)
+          ? section.blocks.map((b: any, bIdx: number) => ({
+              id: b.id || `block-${idx}-${bIdx}`,
+              type: b.type === 'video' ? 'video' : 'text',
+              content: b.content ?? '',
+              url: b.url ?? null,
+            }))
+          : [],
+      }));
+    }
+
+    if (Array.isArray(body) && body.length > 0) {
+      return [
+        {
+          id: 'section-1',
+          title: fallbackTitle || 'Lesson',
+          number: 1,
+          blocks: body.map((b: any, bIdx: number) => ({
+            id: b.id || `block-${bIdx}`,
+            type: b.type === 'video' ? 'video' : 'text',
+            content: b.content ?? b.text ?? '',
+            url: b.url ?? null,
+          })),
+        },
+      ];
+    }
+
+    return [];
+  };
 
   useEffect(() => {
     const loadContent = async () => {
@@ -37,30 +83,14 @@ export default function DailyContent({ currentDay, userId: _userId }: DailyConte
           setTitle(`Day ${currentDay}`);
           setDescription('No content available yet');
           setSections([]);
-          setVideoUrl(undefined);
           setLoading(false);
           return;
         }
 
         setTitle(row.title || `Day ${currentDay}`);
         setDescription(row.description || '');
-        setVideoUrl(row.video_url || undefined);
-
-        if (Array.isArray(row.content_body)) {
-          const mappedSections = row.content_body.map((block: any, index: number) => ({
-            id: block.id || `${row.id}-section-${index + 1}`,
-            title: block.title || row.title || `Section ${index + 1}`,
-            content: block.content ?? block.text ?? '',
-            mediaUrl: block.url || row.video_url || undefined,
-            mediaType: block.url || row.video_url ? 'video' : undefined,
-            journalPrompt: block.journalPrompt || undefined,
-            dayNumber: row.day_number,
-            sectionNumber: index + 1
-          }));
-          setSections(mappedSections);
-        } else {
-          setSections([]);
-        }
+        const normalized = normalizeContent(row.content_body, row.title || `Day ${currentDay}`);
+        setSections(normalized);
       } catch (error: any) {
         console.error('Error loading content:', error);
         toast({
@@ -91,7 +121,6 @@ export default function DailyContent({ currentDay, userId: _userId }: DailyConte
       title={title}
       description={description}
       sections={sections}
-      videoUrl={videoUrl}
     />
   );
 }

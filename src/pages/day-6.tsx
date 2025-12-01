@@ -5,9 +5,17 @@ import { Loader2 } from "lucide-react";
 type BlockType = "text" | "video";
 
 interface LessonBlock {
+  id: string;
   type: BlockType;
   content?: string | null;
   url?: string | null;
+}
+
+interface LessonSection {
+  id: string;
+  title: string;
+  number: number;
+  blocks: LessonBlock[];
 }
 
 interface CourseContentRow {
@@ -21,12 +29,47 @@ interface CourseContentRow {
 
 const DAY_NUMBER = 6;
 
+const normalizeContent = (body: any, fallbackTitle: string): LessonSection[] => {
+  if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
+    return body.map((section: any, idx: number) => ({
+      id: section.id || `section-${idx}`,
+      title: section.title || fallbackTitle || `Section ${idx + 1}`,
+      number: section.number ?? idx + 1,
+      blocks: Array.isArray(section.blocks)
+        ? section.blocks.map((b: any, bIdx: number) => ({
+            id: b.id || `block-${idx}-${bIdx}`,
+            type: b.type === "video" ? "video" : "text",
+            content: b.content ?? "",
+            url: b.url ?? null,
+          }))
+        : [],
+    }));
+  }
+
+  if (Array.isArray(body) && body.length > 0) {
+    return [
+      {
+        id: "section-1",
+        title: fallbackTitle || "Lesson",
+        number: 1,
+        blocks: body.map((b: any, bIdx: number) => ({
+          id: b.id || `block-${bIdx}`,
+          type: b.type === "video" ? "video" : "text",
+          content: b.content ?? b.text ?? "",
+          url: b.url ?? null,
+        })),
+      },
+    ];
+  }
+
+  return [];
+};
+
 export default function Day6() {
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("Day 6: ");
   const [description, setDescription] = useState<string>("");
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [blocks, setBlocks] = useState<LessonBlock[]>([]);
+  const [sections, setSections] = useState<LessonSection[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -46,30 +89,18 @@ export default function Day6() {
         const row = data as CourseContentRow | null;
 
         if (!row) {
-          setBlocks([]);
-          setVideoUrl(null);
+          setSections([]);
           setLoading(false);
           return;
         }
 
         setTitle(row.title || title);
         setDescription(row.description || "");
-        setVideoUrl(row.video_url || null);
-
-        if (Array.isArray(row.content_body)) {
-          setBlocks(
-            row.content_body.map((b: any) => ({
-              type: b.type === "video" ? "video" : "text",
-              content: b.content ?? "",
-              url: b.url ?? null,
-            }))
-          );
-        } else {
-          setBlocks([]);
-        }
+        const normalized = normalizeContent(row.content_body, row.title || title);
+        setSections(normalized);
       } catch (err) {
         console.error("Error loading day 6:", err);
-        setBlocks([]);
+        setSections([]);
       } finally {
         setLoading(false);
       }
@@ -106,38 +137,35 @@ export default function Day6() {
           )}
         </header>
 
-        {blocks.length === 0 && (
+        {sections.length === 0 && (
           <p className="text-sm text-charcoal/70">
             No content available for this day yet.
           </p>
         )}
 
-        {videoUrl && (
-          <div className="bg-white/90 rounded-lg p-4 shadow-sm">
-            <video
-              src={videoUrl}
-              controls
-              className="w-full rounded-md border border-gold/30"
-            />
-          </div>
-        )}
-
         <div className="space-y-6">
-          {blocks.map((block, index) => (
-            <div key={index} className="bg-white/90 rounded-lg p-4 shadow-sm">
-              {block.type === "text" && (
-                <p className="text-sm md:text-base leading-relaxed whitespace-pre-line">
-                  {block.content}
-                </p>
-              )}
+          {sections.map((section) => (
+            <div key={section.id} className="space-y-3">
+              <h3 className="text-xl font-semibold">{section.title}</h3>
+              <div className="space-y-4">
+                {section.blocks.map((block) => (
+                  <div key={block.id} className="bg-white/90 rounded-lg p-4 shadow-sm">
+                    {block.type === "text" && (
+                      <p className="text-sm md:text-base leading-relaxed whitespace-pre-line">
+                        {block.content}
+                      </p>
+                    )}
 
-              {block.type === "video" && block.url && (
-                <video
-                  src={block.url}
-                  controls
-                  className="w-full rounded-md border border-gold/30"
-                />
-              )}
+                    {block.type === "video" && block.url && (
+                      <video
+                        src={block.url}
+                        controls
+                        className="w-full rounded-md border border-gold/30"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

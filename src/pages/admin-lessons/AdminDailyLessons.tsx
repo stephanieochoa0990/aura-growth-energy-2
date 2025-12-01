@@ -6,15 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Save, Trash2, Video } from "lucide-react";
+import { Loader2, Plus, Save, Trash2, Video, ArrowUp, ArrowDown } from "lucide-react";
 
 type BlockType = "text" | "video";
 
 interface LessonBlock {
   id: string;
   type: BlockType;
-  content?: string | null;
-  url?: string | null;
+  content: string;
+  url: string | null;
+}
+
+interface LessonSection {
+  id: string;
+  title: string;
+  number: number;
+  blocks: LessonBlock[];
 }
 
 interface CourseContentRow {
@@ -36,6 +43,46 @@ const dayOptions = [
   { value: 7, label: "Day 7" },
 ];
 
+const createId = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random()}`);
+
+const normalizeContentBody = (body: any, fallbackTitle: string): LessonSection[] => {
+  if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
+    // Already nested structure
+    return body.map((section: any, idx: number) => ({
+      id: section.id || createId(),
+      title: section.title || fallbackTitle || `Section ${idx + 1}`,
+      number: section.number ?? idx + 1,
+      blocks: Array.isArray(section.blocks)
+        ? section.blocks.map((b: any, bIdx: number) => ({
+            id: b.id || createId(),
+            type: b.type === "video" ? "video" : "text",
+            content: b.content ?? "",
+            url: b.url ?? null,
+          }))
+        : [],
+    }));
+  }
+
+  if (Array.isArray(body) && body.length > 0) {
+    // Legacy flat blocks -> wrap in a single section
+    return [
+      {
+        id: createId(),
+        title: fallbackTitle || "Lesson",
+        number: 1,
+        blocks: body.map((b: any, idx: number) => ({
+          id: b.id || createId(),
+          type: b.type === "video" ? "video" : "text",
+          content: b.content ?? b.text ?? "",
+          url: b.url ?? null,
+        })),
+      },
+    ];
+  }
+
+  return [];
+};
+
 const AdminDailyLessons: React.FC = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,7 +90,7 @@ const AdminDailyLessons: React.FC = () => {
   const [rowId, setRowId] = useState<string | null>(null);
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const [blocks, setBlocks] = useState<LessonBlock[]>([]);
+  const [sections, setSections] = useState<LessonSection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
 
@@ -79,7 +126,7 @@ const AdminDailyLessons: React.FC = () => {
         setRowId(null);
         setTitle(`Day ${day}`);
         setDescription("");
-        setBlocks([]);
+        setSections([]);
         return;
       }
 
@@ -87,17 +134,8 @@ const AdminDailyLessons: React.FC = () => {
       setTitle(row.title || `Day ${day}`);
       setDescription(row.description || "");
 
-      if (Array.isArray(row.content_body)) {
-        const mappedBlocks = row.content_body.map((b: any, index: number) => ({
-          id: `block-${index}-${Date.now()}`,
-          type: b.type === "video" ? "video" : "text",
-          content: b.content ?? b.text ?? "",
-          url: b.url ?? null,
-        }));
-        setBlocks(mappedBlocks);
-      } else {
-        setBlocks([]);
-      }
+      const normalized = normalizeContentBody(row.content_body, row.title || `Day ${day}`);
+      setSections(normalized);
     } catch (err: any) {
       console.error("Error loading lesson:", err);
       toast({
@@ -110,40 +148,120 @@ const AdminDailyLessons: React.FC = () => {
     }
   };
 
-  const addTextBlock = () => {
-    const newBlock: LessonBlock = {
-      id: `temp-${Date.now()}`,
-      type: "text",
-      content: "",
-      url: null,
-    };
-    setBlocks((prev) => [...prev, newBlock]);
+  const addSection = () => {
+    setSections((prev) => [
+      ...prev,
+      {
+        id: createId(),
+        title: `Section ${prev.length + 1}`,
+        number: prev.length + 1,
+        blocks: [],
+      },
+    ]);
   };
 
-  const addVideoBlock = () => {
-    const newBlock: LessonBlock = {
-      id: `temp-${Date.now()}`,
-      type: "video",
-      content: "",
-      url: "",
-    };
-    setBlocks((prev) => [...prev, newBlock]);
-  };
-
-  const updateBlockContent = (id: string, content: string) => {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, content } : b))
+  const updateSectionTitle = (id: string, newTitle: string) => {
+    setSections((prev) =>
+      prev.map((section) => (section.id === id ? { ...section, title: newTitle } : section))
     );
   };
 
-  const updateBlockUrl = (id: string, url: string) => {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, url } : b))
+  const removeSection = (id: string) => {
+    setSections((prev) =>
+      prev
+        .filter((section) => section.id !== id)
+        .map((section, idx) => ({ ...section, number: idx + 1 }))
     );
   };
 
-  const removeBlock = (id: string) => {
-    setBlocks((prev) => prev.filter((b) => b.id !== id));
+  const moveSection = (id: string, direction: "up" | "down") => {
+    setSections((prev) => {
+      const index = prev.findIndex((s) => s.id === id);
+      if (index === -1) return prev;
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const newSections = [...prev];
+      const [removed] = newSections.splice(index, 1);
+      newSections.splice(targetIndex, 0, removed);
+      return newSections.map((s, idx) => ({ ...s, number: idx + 1 }));
+    });
+  };
+
+  const addBlock = (sectionId: string, type: BlockType) => {
+    setSections((prev) =>
+      prev.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              blocks: [
+                ...section.blocks,
+                {
+                  id: createId(),
+                  type,
+                  content: "",
+                  url: type === "video" ? "" : null,
+                },
+              ],
+            }
+          : section
+      )
+    );
+  };
+
+  const updateBlockContent = (sectionId: string, blockId: string, content: string) => {
+    setSections((prev) =>
+      prev.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              blocks: section.blocks.map((b) =>
+                b.id === blockId ? { ...b, content } : b
+              ),
+            }
+          : section
+      )
+    );
+  };
+
+  const updateBlockUrl = (sectionId: string, blockId: string, url: string) => {
+    setSections((prev) =>
+      prev.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              blocks: section.blocks.map((b) =>
+                b.id === blockId ? { ...b, url } : b
+              ),
+            }
+          : section
+      )
+    );
+  };
+
+  const removeBlock = (sectionId: string, blockId: string) => {
+    setSections((prev) =>
+      prev.map((section) =>
+        section.id === sectionId
+          ? { ...section, blocks: section.blocks.filter((b) => b.id !== blockId) }
+          : section
+      )
+    );
+  };
+
+  const moveBlock = (sectionId: string, blockId: string, direction: "up" | "down") => {
+    setSections((prev) =>
+      prev.map((section) => {
+        if (section.id !== sectionId) return section;
+        const idx = section.blocks.findIndex((b) => b.id === blockId);
+        if (idx === -1) return section;
+        const target = direction === "up" ? idx - 1 : idx + 1;
+        if (target < 0 || target >= section.blocks.length) return section;
+        const newBlocks = [...section.blocks];
+        const [removed] = newBlocks.splice(idx, 1);
+        newBlocks.splice(target, 0, removed);
+        return { ...section, blocks: newBlocks };
+      })
+    );
   };
 
   const handleSave = async () => {
@@ -159,19 +277,26 @@ const AdminDailyLessons: React.FC = () => {
     try {
       setSaving(true);
 
-      const payloadBlocks = blocks.map((b) => ({
-        type: b.type,
-        content: b.content ?? "",
-        url: b.url ?? null,
+      const payloadSections = sections.map((section, idx) => ({
+        id: section.id,
+        title: section.title,
+        number: idx + 1,
+        blocks: section.blocks.map((b) => ({
+          id: b.id,
+          type: b.type,
+          content: b.content ?? "",
+          url: b.url ?? null,
+        })),
       }));
 
+      const allBlocks = payloadSections.flatMap((s) => s.blocks);
       const videoUrl =
-        payloadBlocks.find((b) => b.type === "video" && b.url)?.url || null;
+        allBlocks.find((b) => b.type === "video" && b.url)?.url || null;
 
       const payload = {
         title,
         description,
-        content_body: payloadBlocks,
+        content_body: payloadSections,
         video_url: videoUrl,
       };
 
@@ -290,66 +415,152 @@ const AdminDailyLessons: React.FC = () => {
         </Card>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Content Blocks</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={addTextBlock} size="sm">
-              <Plus className="h-4 w-4 mr-1" /> Text
-            </Button>
-            <Button variant="outline" onClick={addVideoBlock} size="sm">
-              <Video className="h-4 w-4 mr-1" /> Video
-            </Button>
-          </div>
+          <h2 className="text-xl font-semibold">Sections</h2>
+          <Button variant="outline" onClick={addSection} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Add Section
+          </Button>
         </div>
 
-        <div className="space-y-3">
-          {blocks.length === 0 && (
-            <p className="text-sm text-charcoal/70">No blocks yet.</p>
+        <div className="space-y-4">
+          {sections.length === 0 && (
+            <p className="text-sm text-charcoal/70">No sections yet.</p>
           )}
 
-          {blocks.map((block, idx) => (
-            <Card key={block.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-base">
-                  Block {idx + 1} • {block.type === "video" ? "Video" : "Text"}
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeBlock(block.id)}
-                  aria-label="Remove block"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+          {sections.map((section, sectionIndex) => (
+            <Card key={section.id}>
+              <CardHeader className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">
+                    Section {section.number}
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => moveSection(section.id, "up")}
+                      disabled={sectionIndex === 0}
+                      aria-label="Move section up"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => moveSection(section.id, "down")}
+                      disabled={sectionIndex === sections.length - 1}
+                      aria-label="Move section down"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSection(section.id)}
+                      aria-label="Remove section"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Input
+                  placeholder="Section title"
+                  value={section.title}
+                  onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+                />
               </CardHeader>
               <CardContent className="space-y-3">
-                {block.type === "text" && (
-                  <Textarea
-                    placeholder="Text content"
-                    value={block.content ?? ""}
-                    onChange={(e) =>
-                      updateBlockContent(block.id, e.target.value)
-                    }
-                    rows={5}
-                  />
-                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addBlock(section.id, "text")}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Text
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addBlock(section.id, "video")}
+                  >
+                    <Video className="h-4 w-4 mr-1" /> Video
+                  </Button>
+                </div>
 
-                {block.type === "video" && (
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Video URL (YouTube, Vimeo, etc.)"
-                      value={block.url ?? ""}
-                      onChange={(e) => updateBlockUrl(block.id, e.target.value)}
-                    />
-                    <Textarea
-                      placeholder="Optional description"
-                      value={block.content ?? ""}
-                      onChange={(e) =>
-                        updateBlockContent(block.id, e.target.value)
-                      }
-                      rows={3}
-                    />
-                  </div>
-                )}
+                <div className="space-y-3">
+                  {section.blocks.length === 0 && (
+                    <p className="text-sm text-charcoal/70">No blocks in this section.</p>
+                  )}
+
+                  {section.blocks.map((block, blockIndex) => (
+                    <Card key={block.id} className="border border-dashed">
+                      <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="text-sm">
+                          Block {blockIndex + 1} • {block.type === "video" ? "Video" : "Text"}
+                        </CardTitle>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => moveBlock(section.id, block.id, "up")}
+                            disabled={blockIndex === 0}
+                            aria-label="Move block up"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => moveBlock(section.id, block.id, "down")}
+                            disabled={blockIndex === section.blocks.length - 1}
+                            aria-label="Move block down"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeBlock(section.id, block.id)}
+                            aria-label="Remove block"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {block.type === "text" && (
+                          <Textarea
+                            placeholder="Text content"
+                            value={block.content}
+                            onChange={(e) =>
+                              updateBlockContent(section.id, block.id, e.target.value)
+                            }
+                            rows={5}
+                          />
+                        )}
+
+                        {block.type === "video" && (
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Video URL (YouTube, Vimeo, etc.)"
+                              value={block.url ?? ""}
+                              onChange={(e) =>
+                                updateBlockUrl(section.id, block.id, e.target.value)
+                              }
+                            />
+                            <Textarea
+                              placeholder="Optional description"
+                              value={block.content}
+                              onChange={(e) =>
+                                updateBlockContent(section.id, block.id, e.target.value)
+                              }
+                              rows={3}
+                            />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           ))}

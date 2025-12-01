@@ -6,31 +6,26 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { VideoPlayer } from './VideoPlayer';
-import MediaPlayer from './MediaPlayer';
-import JournalPrompt from './JournalPrompt';
-
+ 
+interface LessonBlock {
+  id: string;
+  type: 'text' | 'video';
+  content?: string | null;
+  url?: string | null;
+}
 
 interface ContentSection {
   id: string;
   title: string;
-  content: string;
-  duration?: string;
-  mediaUrl?: string;
-  mediaType?: 'youtube' | 'audio' | 'video';
-  mediaCaption?: string;
-  journalPrompt?: string;
-  dayNumber?: number;
-  sectionNumber?: number;
+  number?: number;
+  blocks: LessonBlock[];
 }
-
 
 interface DayContentProps {
   dayNumber: number;
   title: string;
   description: string;
   sections: ContentSection[];
-  videoUrl?: string;
   continueVideoId?: string | null;
   continueTimestamp?: number | null;
 }
@@ -39,7 +34,6 @@ export default function DayContent({
   title, 
   description, 
   sections, 
-  videoUrl,
   continueVideoId,
   continueTimestamp 
 }: DayContentProps) {
@@ -159,25 +153,6 @@ export default function DayContent({
         </CardContent>
       </Card>
 
-      {/* Video Section */}
-      {videoUrl && (
-        <Card>
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl">Video Lesson</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={videoUrl}
-                className="w-full h-full"
-                allowFullScreen
-                title={`Day ${dayNumber} Video`}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Content Sections */}
       <div className="space-y-3 sm:space-y-4">
         {sections.map((section, index) => {
@@ -252,43 +227,30 @@ export default function DayContent({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
-                    {/* Media Player */}
-                    {section.mediaUrl && section.mediaType && (
-                      <div className="mb-4">
-                        {section.mediaType === 'video' ? (
-                          <VideoPlayer
-                            videoId={section.id}
-                            videoUrl={section.mediaUrl}
-                            title={section.title}
-                            dayNumber={section.dayNumber || dayNumber}
-                            sectionNumber={section.sectionNumber || (index + 1)}
-                          />
-                        ) : (
-                          <MediaPlayer
-                            mediaUrl={section.mediaUrl}
-                            mediaType={section.mediaType}
-                            caption={section.mediaCaption || `${section.title} media content`}
-                            sectionName={section.title}
-                          />
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Text Content */}
-                    <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none">
-                      <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                        {section.content}
-                      </div>
+                    {/* Blocks */}
+                    <div className="space-y-4">
+                      {section.blocks.map((block) => (
+                        <div key={block.id} className="space-y-2">
+                          {block.type === 'text' && (
+                            <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none">
+                              <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {block.content}
+                              </div>
+                            </div>
+                          )}
+                          {block.type === 'video' && block.url && (
+                            <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                              <iframe
+                                src={block.url}
+                                className="w-full h-full"
+                                allowFullScreen
+                                title={`${section.title} video`}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-
-                    {/* Journal Prompt */}
-                    {section.journalPrompt && (
-                      <JournalPrompt
-                        sectionId={section.id}
-                        prompt={section.journalPrompt}
-                        dayNumber={dayNumber}
-                      />
-                    )}
 
                     {/* Continue Button */}
                     {index < sections.length - 1 && (
