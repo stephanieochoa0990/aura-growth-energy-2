@@ -50,10 +50,10 @@ const normalizeContentBody = (body: any): LessonSection[] => {
     // Already nested structure
     return body.map((section: any, idx: number) => ({
       id: section.id || createId(),
-      title: section.title || `Section ${idx + 1}`,
+      title: section.title ?? `Section ${idx + 1}`,
       number: section.number ?? idx + 1,
       blocks: Array.isArray(section.blocks)
-        ? section.blocks.map((b: any, bIdx: number) => ({
+        ? section.blocks.map((b: any) => ({
             id: b.id || createId(),
             type: b.type === "video" ? "video" : "text",
             content: b.content ?? "",
