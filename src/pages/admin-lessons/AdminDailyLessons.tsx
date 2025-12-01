@@ -47,7 +47,7 @@ const createId = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now
 
 const normalizeContentBody = (body: any): LessonSection[] => {
   if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
-    // Already nested structure
+    // Already nested structure; keep fields, only fill minimal defaults when missing
     return body.map((section: any, idx: number) => ({
       id: section.id || createId(),
       title: section.title ?? `Section ${idx + 1}`,
@@ -70,7 +70,7 @@ const normalizeContentBody = (body: any): LessonSection[] => {
         id: createId(),
         title: "Section 1",
         number: 1,
-        blocks: body.map((b: any, idx: number) => ({
+        blocks: body.map((b: any) => ({
           id: b.id || createId(),
           type: b.type === "video" ? "video" : "text",
           content: b.content ?? b.text ?? "",
