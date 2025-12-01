@@ -108,7 +108,7 @@ const AdminDailyLessons: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayNumber]);
 
-  const loadLesson = async (day: number, idOverride?: string | null) => {
+  const loadLesson = async (day: number) => {
     try {
       setLoading(true);
 
@@ -116,9 +116,10 @@ const AdminDailyLessons: React.FC = () => {
         .from("course_content")
         .select("id, day_number, title, description, content_body, video_url");
 
-      const { data, error } = idOverride
-        ? await baseQuery.eq("id", idOverride).single()
-        : await baseQuery.eq("day_number", day).limit(1).maybeSingle();
+      const { data, error } =
+        rowId !== null
+          ? await baseQuery.eq("id", rowId).single()
+          : await baseQuery.eq("day_number", day).single();
 
       if (error) throw error;
 
@@ -133,7 +134,9 @@ const AdminDailyLessons: React.FC = () => {
         return;
       }
 
-      setRowId(row.id);
+      if (rowId === null) {
+        setRowId(row.id);
+      }
       setTitle(row.title || `Day ${day}`);
       setDescription(row.description || "");
       setLastLoadedRow(row);
@@ -324,7 +327,7 @@ const AdminDailyLessons: React.FC = () => {
         if (error) throw error;
         const newId = (data as any)?.id ?? null;
         setRowId(newId);
-        await loadLesson(dayNumber, newId);
+        await loadLesson(dayNumber);
         return;
       }
 
@@ -333,7 +336,7 @@ const AdminDailyLessons: React.FC = () => {
         description: "Lesson content has been updated.",
       });
 
-      await loadLesson(dayNumber, rowId);
+      await loadLesson(dayNumber);
     } catch (err: any) {
       console.error("Save error:", err);
       toast({
