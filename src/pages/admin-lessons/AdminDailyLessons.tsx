@@ -103,6 +103,7 @@ const AdminDailyLessons: React.FC = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    setRowId(null);
     setSearchParams({ day: String(dayNumber) });
     loadLesson(dayNumber);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,7 +124,7 @@ const AdminDailyLessons: React.FC = () => {
               .eq("day_number", day)
               .order("updated_at", { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
 
       if (error) throw error;
 
@@ -138,9 +139,7 @@ const AdminDailyLessons: React.FC = () => {
         return;
       }
 
-      if (rowId === null) {
-        setRowId(row.id);
-      }
+      setRowId(row.id);
       setTitle(row.title || `Day ${day}`);
       setDescription(row.description || "");
       setLastLoadedRow(row);
@@ -326,7 +325,7 @@ const AdminDailyLessons: React.FC = () => {
           .from("course_content")
           .insert({ day_number: dayNumber, ...payload })
           .select("id")
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         const newId = (data as any)?.id ?? null;
