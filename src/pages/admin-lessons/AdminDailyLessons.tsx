@@ -282,7 +282,7 @@ const AdminDailyLessons: React.FC = () => {
         id: section.id,
         title: section.title,
         number: idx + 1,
-        blocks: section.blocks.map((b) => ({
+        blocks: (section.blocks || []).map((b) => ({
           id: b.id,
           type: b.type,
           content: b.content ?? "",
