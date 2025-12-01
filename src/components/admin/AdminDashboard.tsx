@@ -16,8 +16,6 @@ import {
 
 import StudentManagement from './StudentManagement';
 import Analytics from './Analytics';
-import ContentManager from './ContentManager';
-import BulkContentManager from './BulkContentManager';
 import AnnouncementManager from './AnnouncementManager';
 import LiveSessionManager from './LiveSessionManager';
 import ReviewModeration from './ReviewModeration';
@@ -306,14 +304,6 @@ const AdminDashboard: React.FC = () => {
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             )}
 
-            {hasPermission('can_edit_content') && (
-              <TabsTrigger value="content">Content</TabsTrigger>
-            )}
-
-            {hasPermission('can_publish_content') && (
-              <TabsTrigger value="bulk">Bulk Edit</TabsTrigger>
-            )}
-
             {hasPermission('can_manage_sessions') && (
               <TabsTrigger value="sessions">Live Sessions</TabsTrigger>
             )}
@@ -355,18 +345,6 @@ const AdminDashboard: React.FC = () => {
           {hasPermission('can_view_analytics') && (
             <TabsContent value="analytics">
               <Analytics userRole={safeRole(userProfile?.role)} />
-            </TabsContent>
-          )}
-
-          {hasPermission('can_edit_content') && (
-            <TabsContent value="content">
-              <ContentManager userRole={safeRole(userProfile?.role)} />
-            </TabsContent>
-          )}
-
-          {hasPermission('can_publish_content') && (
-            <TabsContent value="bulk">
-              <BulkContentManager />
             </TabsContent>
           )}
 

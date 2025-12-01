@@ -29,9 +29,7 @@ import MFASetup from "./pages/MFASetup";
 
 // ---- Admin Dashboard ----
 import AdminDashboard from "./components/admin/AdminDashboard";
-
-// ---- Dynamic Admin Lesson Editor ----
-import AdminLessonEditor from "./pages/admin-lessons/AdminLessonEditor";
+import AdminDailyLessons from "./pages/admin-lessons/AdminDailyLessons";
 
 // ---- Admin Preview Pages ----
 import DailyLessons from "./pages/DailyLessons";
@@ -78,11 +76,7 @@ const App = () => (
                 ADMIN DASHBOARD
             -------------------------- */}
             <Route path="/admin" element={<AdminDashboard />} />
-
-            {/* -------------------------
-                DYNAMIC ADMIN LESSON EDITOR
-            -------------------------- */}
-            <Route path="/admin/lessons/day/:dayNumber" element={<AdminLessonEditor />} />
+            <Route path="/admin/lessons" element={<AdminDailyLessons />} />
 
             {/* -------------------------
                 ADMIN PREVIEW PAGES

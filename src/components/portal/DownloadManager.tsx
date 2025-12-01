@@ -50,8 +50,11 @@ export default function DownloadManager() {
     try {
       const { data, error } = await supabase
         .from('course_content')
-        .select('*')
-        .eq('day_number', dayNumber);
+        .select('id, day_number, title, description, content_body, video_url')
+        .eq('day_number', dayNumber)
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) throw error;
 

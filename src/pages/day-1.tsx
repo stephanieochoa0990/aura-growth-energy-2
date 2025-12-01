@@ -16,6 +16,7 @@ interface CourseContentRow {
   title: string;
   description: string | null;
   content_body: any | null;
+  video_url: string | null;
 }
 
 const DAY_NUMBER = 1;
@@ -24,6 +25,7 @@ export default function Day1() {
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("Day 1: Remember");
   const [description, setDescription] = useState<string>("");
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<LessonBlock[]>([]);
 
   useEffect(() => {
@@ -33,22 +35,26 @@ export default function Day1() {
 
         const { data, error } = await supabase
           .from("course_content")
-          .select("id, day_number, title, description, content_body")
+          .select("id, day_number, title, description, content_body, video_url")
           .eq("day_number", DAY_NUMBER)
-          .order("created_at", { ascending: false });
+          .order("id", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         if (error) throw error;
 
-        const row = (data as CourseContentRow[] | null)?.[0] || null;
+        const row = data as CourseContentRow | null;
 
         if (!row) {
           setBlocks([]);
+          setVideoUrl(null);
           setLoading(false);
           return;
         }
 
         setTitle(row.title || title);
         setDescription(row.description || "");
+        setVideoUrl(row.video_url || null);
 
         if (Array.isArray(row.content_body)) {
           setBlocks(
@@ -104,6 +110,16 @@ export default function Day1() {
           <p className="text-sm text-charcoal/70">
             No content available for this day yet.
           </p>
+        )}
+
+        {videoUrl && (
+          <div className="bg-white/90 rounded-lg p-4 shadow-sm">
+            <video
+              src={videoUrl}
+              controls
+              className="w-full rounded-md border border-gold/30"
+            />
+          </div>
         )}
 
         <div className="space-y-6">

@@ -45,7 +45,7 @@ export default function DailyLessons() {
 
               {/* Admin edit */}
               <button
-                onClick={() => navigate(`/admin/lessons/day/${d.day}`)}
+                onClick={() => navigate(`/admin/lessons?day=${d.day}`)}
                 className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
               >
                 Edit
