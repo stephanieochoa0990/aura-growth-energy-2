@@ -298,6 +298,7 @@ const AdminDailyLessons: React.FC = () => {
         description,
         content_body: payloadSections,
         video_url: videoUrl,
+        updated_at: new Date().toISOString(),
       };
 
       if (rowId) {
