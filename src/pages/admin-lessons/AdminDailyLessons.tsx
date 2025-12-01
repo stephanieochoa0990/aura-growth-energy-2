@@ -97,6 +97,10 @@ const AdminDailyLessons: React.FC = () => {
   const [lastLoadedRow, setLastLoadedRow] = useState<CourseContentRow | null>(null);
 
   useEffect(() => {
+    console.log("DEBUG_ADMIN_MOUNT");
+  }, []);
+
+  useEffect(() => {
     const param = Number(searchParams.get("day") || 1);
     const validDay = Number.isNaN(param) || param < 1 || param > 7 ? 1 : param;
     setDayNumber(validDay);
@@ -105,6 +109,7 @@ const AdminDailyLessons: React.FC = () => {
   useEffect(() => {
     setRowId(null);
     setSearchParams({ day: String(dayNumber) });
+    console.log("DEBUG_DAY_CHANGE", dayNumber);
     loadLesson(dayNumber);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayNumber]);
@@ -112,13 +117,7 @@ const AdminDailyLessons: React.FC = () => {
   const loadLesson = async (day: number) => {
     try {
       setLoading(true);
-      // reset state before applying new data
-      setTitle("");
-      setDescription("");
-      setSections([]);
-      if (rowId === null) {
-        setRowId(null);
-      }
+      console.log("DEBUG_LOAD_CALLED", { day, rowId });
 
       const baseQuery = supabase
         .from("course_content")

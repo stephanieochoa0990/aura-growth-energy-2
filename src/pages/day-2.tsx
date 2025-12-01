@@ -82,7 +82,7 @@ export default function Day2() {
           .eq("day_number", DAY_NUMBER)
           .order("updated_at", { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 

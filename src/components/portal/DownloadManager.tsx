@@ -54,7 +54,7 @@ export default function DownloadManager() {
         .eq('day_number', dayNumber)
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
