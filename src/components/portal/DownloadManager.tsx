@@ -52,7 +52,7 @@ export default function DownloadManager() {
         .from('course_content')
         .select('id, day_number, title, description, content_body, video_url')
         .eq('day_number', dayNumber)
-        .order('id', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 

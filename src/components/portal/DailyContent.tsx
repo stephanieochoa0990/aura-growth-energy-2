@@ -25,7 +25,7 @@ export default function DailyContent({ currentDay, userId: _userId }: DailyConte
           .from('course_content')
           .select('id, day_number, title, description, content_body, video_url')
           .eq('day_number', currentDay)
-          .order('id', { ascending: false })
+          .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 

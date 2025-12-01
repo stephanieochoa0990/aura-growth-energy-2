@@ -37,7 +37,7 @@ export default function Day6() {
           .from("course_content")
           .select("id, day_number, title, description, content_body, video_url")
           .eq("day_number", DAY_NUMBER)
-          .order("id", { ascending: false })
+          .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
 
