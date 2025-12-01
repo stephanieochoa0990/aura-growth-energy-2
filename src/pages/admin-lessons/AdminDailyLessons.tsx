@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Save, Trash2, Video, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, Plus, Save, Trash2, Video, ArrowUp, ArrowDown, ArrowLeft } from "lucide-react";
 
 type BlockType = "text" | "video";
 
@@ -45,12 +45,12 @@ const dayOptions = [
 
 const createId = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random()}`);
 
-const normalizeContentBody = (body: any, fallbackTitle: string): LessonSection[] => {
+const normalizeContentBody = (body: any): LessonSection[] => {
   if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
     // Already nested structure
     return body.map((section: any, idx: number) => ({
       id: section.id || createId(),
-      title: section.title || fallbackTitle || `Section ${idx + 1}`,
+      title: section.title || `Section ${idx + 1}`,
       number: section.number ?? idx + 1,
       blocks: Array.isArray(section.blocks)
         ? section.blocks.map((b: any, bIdx: number) => ({
@@ -68,7 +68,7 @@ const normalizeContentBody = (body: any, fallbackTitle: string): LessonSection[]
     return [
       {
         id: createId(),
-        title: fallbackTitle || "Lesson",
+        title: "Section 1",
         number: 1,
         blocks: body.map((b: any, idx: number) => ({
           id: b.id || createId(),
@@ -86,6 +86,7 @@ const normalizeContentBody = (body: any, fallbackTitle: string): LessonSection[]
 const AdminDailyLessons: React.FC = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [dayNumber, setDayNumber] = useState<number>(1);
   const [rowId, setRowId] = useState<string | null>(null);
   const [title, setTitle] = useState<string>("");
@@ -134,7 +135,7 @@ const AdminDailyLessons: React.FC = () => {
       setTitle(row.title || `Day ${day}`);
       setDescription(row.description || "");
 
-      const normalized = normalizeContentBody(row.content_body, row.title || `Day ${day}`);
+      const normalized = normalizeContentBody(row.content_body);
       setSections(normalized);
     } catch (err: any) {
       console.error("Error loading lesson:", err);
@@ -352,16 +353,26 @@ const AdminDailyLessons: React.FC = () => {
     <div className="min-h-screen bg-[#f8f5f1] p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-yellow-600/80">
-              Admin • Lessons
-            </p>
-            <h1 className="text-3xl font-display gold-gradient-text">
-              Daily Lessons
-            </h1>
-            <p className="text-sm text-charcoal/70 mt-1">
-              Single source of truth stored in course_content.
-            </p>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => navigate("/class/daily")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Lessons
+            </Button>
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-yellow-600/80">
+                Admin • Lessons
+              </p>
+              <h1 className="text-3xl font-display gold-gradient-text">
+                Daily Lessons
+              </h1>
+              <p className="text-sm text-charcoal/70 mt-1">
+                Single source of truth stored in course_content.
+              </p>
+            </div>
           </div>
 
           <div className="flex gap-3">
