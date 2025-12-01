@@ -108,17 +108,17 @@ const AdminDailyLessons: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayNumber]);
 
-  const loadLesson = async (day: number) => {
+  const loadLesson = async (day: number, idOverride?: string | null) => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      const baseQuery = supabase
         .from("course_content")
-        .select("id, day_number, title, description, content_body, video_url")
-        .eq("day_number", day)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .select("id, day_number, title, description, content_body, video_url");
+
+      const { data, error } = idOverride
+        ? await baseQuery.eq("id", idOverride).single()
+        : await baseQuery.eq("day_number", day).limit(1).maybeSingle();
 
       if (error) throw error;
 
@@ -322,7 +322,10 @@ const AdminDailyLessons: React.FC = () => {
           .single();
 
         if (error) throw error;
-        setRowId((data as any)?.id ?? null);
+        const newId = (data as any)?.id ?? null;
+        setRowId(newId);
+        await loadLesson(dayNumber, newId);
+        return;
       }
 
       toast({
@@ -330,7 +333,7 @@ const AdminDailyLessons: React.FC = () => {
         description: "Lesson content has been updated.",
       });
 
-      await loadLesson(dayNumber);
+      await loadLesson(dayNumber, rowId);
     } catch (err: any) {
       console.error("Save error:", err);
       toast({
