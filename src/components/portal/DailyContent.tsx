@@ -73,7 +73,7 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
           .eq('day_number', currentDay)
           .order('updated_at', { ascending: false })
           .limit(1)
-          .maybeSingle();
+          .single();
 
         if (error) throw error;
 

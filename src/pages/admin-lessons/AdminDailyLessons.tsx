@@ -119,7 +119,11 @@ const AdminDailyLessons: React.FC = () => {
       const { data, error } =
         rowId !== null
           ? await baseQuery.eq("id", rowId).single()
-          : await baseQuery.eq("day_number", day).single();
+          : await baseQuery
+              .eq("day_number", day)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .single();
 
       if (error) throw error;
 
