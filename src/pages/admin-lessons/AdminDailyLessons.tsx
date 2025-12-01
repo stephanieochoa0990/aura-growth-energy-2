@@ -110,7 +110,6 @@ const AdminDailyLessons: React.FC = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    setRowId(null);
     console.log("DEBUG_DAY_CHANGE", dayNumber);
     loadLesson(dayNumber);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,18 +127,11 @@ const AdminDailyLessons: React.FC = () => {
 
       let row: CourseContentRow | null = null;
 
-      const idToUse = forceId ?? rowId;
-
-      if (idToUse !== null) {
-        const { data, error } = await baseQuery.eq("id", idToUse).maybeSingle();
-        if (error) {
-          console.error("Error loading by id, falling back to day_number:", error);
-        } else {
-          row = (data as CourseContentRow | null) || null;
-        }
-      }
-
-      if (!row) {
+      if (forceId) {
+        const { data, error } = await baseQuery.eq("id", forceId).maybeSingle();
+        if (error) throw error;
+        row = (data as CourseContentRow | null) || null;
+      } else {
         const { data, error } = await baseQuery
           .eq("day_number", day)
           .order("updated_at", { ascending: false })

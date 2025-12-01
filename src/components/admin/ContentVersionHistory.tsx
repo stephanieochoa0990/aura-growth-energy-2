@@ -23,7 +23,7 @@ interface Version {
   change_note: string;
   changed_by: string;
   created_at: string;
-  content_body: any;
+  content: any;
 }
 
 interface ContentVersionHistoryProps {
@@ -169,7 +169,15 @@ const ContentVersionHistory: React.FC<ContentVersionHistoryProps> = ({
                         <div className="mt-4 p-4 bg-gray-50 rounded">
                           <h5 className="font-medium mb-2">Content Preview:</h5>
                           <div className="text-sm text-gray-600 max-h-40 overflow-y-auto">
-                            {version.content_body?.text || version.description || 'No content preview available'}
+                            {(() => {
+                              if (Array.isArray(version.content)) {
+                                const firstText = version.content
+                                  .flatMap((s: any) => Array.isArray(s?.blocks) ? s.blocks : [])
+                                  .find((b: any) => b?.type === 'text' && b?.content);
+                                return firstText?.content || version.description || 'No content preview available';
+                              }
+                              return version.description || 'No content preview available';
+                            })()}
                           </div>
                         </div>
                       )}

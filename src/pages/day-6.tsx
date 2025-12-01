@@ -78,7 +78,7 @@ export default function Day6() {
 
         const { data, error } = await supabase
           .from("course_content")
-          .select("id, day_number, title, description, content, video_url")
+          .select("*")
           .eq("day_number", DAY_NUMBER)
           .order("updated_at", { ascending: false })
           .limit(1)
