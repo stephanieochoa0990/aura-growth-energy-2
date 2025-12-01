@@ -69,7 +69,7 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
 
         const { data, error } = await supabase
           .from('course_content')
-          .select('id, day_number, title, description, content_body, video_url')
+          .select('id, day_number, title, description, content, video_url')
           .eq('day_number', currentDay)
           .order('updated_at', { ascending: false })
           .limit(1)
@@ -89,7 +89,7 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
 
         setTitle(row.title || `Day ${currentDay}`);
         setDescription(row.description || '');
-        const normalized = normalizeContent(row.content_body, row.title || `Day ${currentDay}`);
+        const normalized = normalizeContent(row.content, row.title || `Day ${currentDay}`);
         setSections(normalized);
       } catch (error: any) {
         console.error('Error loading content:', error);

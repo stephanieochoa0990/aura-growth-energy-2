@@ -23,7 +23,7 @@ interface CourseContentRow {
   day_number: number;
   title: string;
   description: string | null;
-  content_body: any | null;
+  content: any | null;
   video_url: string | null;
 }
 
@@ -78,7 +78,7 @@ export default function Day3() {
 
         const { data, error } = await supabase
           .from("course_content")
-          .select("id, day_number, title, description, content_body, video_url")
+          .select("id, day_number, title, description, content, video_url")
           .eq("day_number", DAY_NUMBER)
           .order("updated_at", { ascending: false })
           .limit(1)
@@ -96,7 +96,7 @@ export default function Day3() {
 
         setTitle(row.title || title);
         setDescription(row.description || "");
-        const normalized = normalizeContent(row.content_body, row.title || title);
+        const normalized = normalizeContent(row.content, row.title || title);
         setSections(normalized);
       } catch (err) {
         console.error("Error loading day 3:", err);

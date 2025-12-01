@@ -29,7 +29,7 @@ interface CourseContentRow {
   day_number: number;
   title: string;
   description: string | null;
-  content_body: any[] | null;
+  content: any[] | null;
   video_url: string | null;
 }
 
@@ -95,6 +95,7 @@ const AdminDailyLessons: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [lastLoadedRow, setLastLoadedRow] = useState<CourseContentRow | null>(null);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "ready">("idle");
 
   useEffect(() => {
     console.log("DEBUG_ADMIN_MOUNT");
@@ -114,19 +115,22 @@ const AdminDailyLessons: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayNumber]);
 
-  const loadLesson = async (day: number) => {
+  const loadLesson = async (day: number, forceId?: string | null) => {
     try {
       setLoading(true);
-      console.log("DEBUG_LOAD_CALLED", { day, rowId });
+      setLoadState("loading");
+      console.log("DEBUG_LOAD_CALLED", { day, rowId, forceId });
 
       const baseQuery = supabase
         .from("course_content")
-        .select("id, day_number, title, description, content_body, video_url");
+        .select("id, day_number, title, description, content, video_url");
 
       let row: CourseContentRow | null = null;
 
-      if (rowId !== null) {
-        const { data, error } = await baseQuery.eq("id", rowId).maybeSingle();
+      const idToUse = forceId ?? rowId;
+
+      if (idToUse !== null) {
+        const { data, error } = await baseQuery.eq("id", idToUse).maybeSingle();
         if (error) {
           console.error("Error loading by id, falling back to day_number:", error);
         } else {
@@ -151,6 +155,7 @@ const AdminDailyLessons: React.FC = () => {
         setTitle(`Day ${day}`);
         setDescription("");
         setSections([]);
+        setLoadState("ready");
         return;
       }
 
@@ -159,8 +164,9 @@ const AdminDailyLessons: React.FC = () => {
       setDescription(row.description || "");
       setLastLoadedRow(row);
 
-      const normalized = normalizeContentBody(row.content_body);
+      const normalized = normalizeContentBody(row.content);
       setSections(normalized);
+      setLoadState("ready");
     } catch (err: any) {
       console.error("Error loading lesson:", err);
       toast({
@@ -321,7 +327,7 @@ const AdminDailyLessons: React.FC = () => {
       const payload = {
         title,
         description,
-        content_body: payloadSections,
+        content: payloadSections,
         video_url: videoUrl,
         updated_at: new Date().toISOString(),
       };
@@ -335,7 +341,7 @@ const AdminDailyLessons: React.FC = () => {
           .eq("id", rowId);
 
         if (error) throw error;
-        await loadLesson(dayNumber);
+        await loadLesson(dayNumber, rowId);
       } else {
         const { data, error } = await supabase
           .from("course_content")
@@ -346,7 +352,7 @@ const AdminDailyLessons: React.FC = () => {
         if (error) throw error;
         const newId = (data as any)?.id ?? null;
         setRowId(newId);
-        await loadLesson(dayNumber);
+        await loadLesson(dayNumber, newId);
         return;
       }
 
