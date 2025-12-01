@@ -80,9 +80,7 @@ export default function Day1() {
           .from("course_content")
           .select("id, day_number, title, description, content_body, video_url")
           .eq("day_number", DAY_NUMBER)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .single();
 
         if (error) throw error;
 
