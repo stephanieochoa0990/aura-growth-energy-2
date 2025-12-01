@@ -94,6 +94,7 @@ const AdminDailyLessons: React.FC = () => {
   const [sections, setSections] = useState<LessonSection[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
+  const [lastLoadedRow, setLastLoadedRow] = useState<CourseContentRow | null>(null);
 
   useEffect(() => {
     const param = Number(searchParams.get("day") || 1);
@@ -122,6 +123,7 @@ const AdminDailyLessons: React.FC = () => {
       if (error) throw error;
 
       const row = data as CourseContentRow | null;
+      console.log("DEBUG_LOAD_ROW", row);
 
       if (!row) {
         setRowId(null);
@@ -134,6 +136,7 @@ const AdminDailyLessons: React.FC = () => {
       setRowId(row.id);
       setTitle(row.title || `Day ${day}`);
       setDescription(row.description || "");
+      setLastLoadedRow(row);
 
       const normalized = normalizeContentBody(row.content_body);
       setSections(normalized);
@@ -301,6 +304,8 @@ const AdminDailyLessons: React.FC = () => {
         video_url: videoUrl,
         updated_at: new Date().toISOString(),
       };
+      console.log("DEBUG_SAVE_SECTIONS", sections);
+      console.log("DEBUG_SAVE_PAYLOAD", payload);
 
       if (rowId) {
         const { error } = await supabase
@@ -404,11 +409,11 @@ const AdminDailyLessons: React.FC = () => {
                 </>
               )}
             </Button>
-          </div>
         </div>
+      </div>
 
-        <Card className="lotus-card">
-          <CardHeader>
+      <Card className="lotus-card">
+        <CardHeader>
             <CardTitle>Lesson Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -576,6 +581,25 @@ const AdminDailyLessons: React.FC = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Debug Panel */}
+        <div className="border border-dashed border-gray-300 rounded p-4 bg-white/60">
+          <h3 className="text-sm font-semibold mb-2">Debug: Sections & Last Loaded Row</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs font-medium mb-1">Current sections state</p>
+              <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+{JSON.stringify(sections, null, 2)}
+              </pre>
+            </div>
+            <div>
+              <p className="text-xs font-medium mb-1">Last loaded row (content_body)</p>
+              <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+{JSON.stringify(lastLoadedRow?.content_body, null, 2)}
+              </pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>
