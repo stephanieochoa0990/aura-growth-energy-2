@@ -112,23 +112,39 @@ const AdminDailyLessons: React.FC = () => {
   const loadLesson = async (day: number) => {
     try {
       setLoading(true);
+      // reset state before applying new data
+      setTitle("");
+      setDescription("");
+      setSections([]);
+      if (rowId === null) {
+        setRowId(null);
+      }
 
       const baseQuery = supabase
         .from("course_content")
         .select("id, day_number, title, description, content_body, video_url");
 
-      const { data, error } =
-        rowId !== null
-          ? await baseQuery.eq("id", rowId).single()
-          : await baseQuery
-              .eq("day_number", day)
-              .order("updated_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
+      let row: CourseContentRow | null = null;
 
-      if (error) throw error;
+      if (rowId !== null) {
+        const { data, error } = await baseQuery.eq("id", rowId).maybeSingle();
+        if (error) {
+          console.error("Error loading by id, falling back to day_number:", error);
+        } else {
+          row = (data as CourseContentRow | null) || null;
+        }
+      }
 
-      const row = data as CourseContentRow | null;
+      if (!row) {
+        const { data, error } = await baseQuery
+          .eq("day_number", day)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        row = (data as CourseContentRow | null) || null;
+      }
+
       console.log("DEBUG_LOAD_ROW", row);
 
       if (!row) {
@@ -320,6 +336,7 @@ const AdminDailyLessons: React.FC = () => {
           .eq("id", rowId);
 
         if (error) throw error;
+        await loadLesson(dayNumber);
       } else {
         const { data, error } = await supabase
           .from("course_content")
