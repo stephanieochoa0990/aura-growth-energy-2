@@ -104,12 +104,13 @@ const AdminDailyLessons: React.FC = () => {
   useEffect(() => {
     const param = Number(searchParams.get("day") || 1);
     const validDay = Number.isNaN(param) || param < 1 || param > 7 ? 1 : param;
-    setDayNumber(validDay);
+    if (validDay !== dayNumber) {
+      setDayNumber(validDay);
+    }
   }, [searchParams]);
 
   useEffect(() => {
     setRowId(null);
-    setSearchParams({ day: String(dayNumber) });
     console.log("DEBUG_DAY_CHANGE", dayNumber);
     loadLesson(dayNumber);
     // eslint-disable-next-line react-hooks/exhaustive-deps
