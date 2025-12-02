@@ -128,10 +128,12 @@ const AdminDailyLessons: React.FC = () => {
       let row: CourseContentRow | null = null;
 
       if (forceId) {
+        console.log("DEBUG_QUERY_PATH", "forceId");
         const { data, error } = await baseQuery.eq("id", forceId).maybeSingle();
         if (error) throw error;
         row = (data as CourseContentRow | null) || null;
       } else {
+        console.log("DEBUG_QUERY_PATH", "day_number_latest");
         const { data, error } = await baseQuery
           .eq("day_number", day)
           .order("updated_at", { ascending: false })
@@ -144,7 +146,6 @@ const AdminDailyLessons: React.FC = () => {
       console.log("DEBUG_LOAD_ROW", row);
 
       if (!row) {
-        setRowId(null);
         setTitle(`Day ${day}`);
         setDescription("");
         setSections([]);
@@ -158,6 +159,7 @@ const AdminDailyLessons: React.FC = () => {
       setLastLoadedRow(row);
 
       const normalized = normalizeContentBody(row.content);
+      console.log("DEBUG_NORMALIZED_SECTIONS", normalized);
       setSections(normalized);
       setLoadState("ready");
     } catch (err: any) {
