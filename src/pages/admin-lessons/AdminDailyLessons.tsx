@@ -108,6 +108,9 @@ const AdminDailyLessons: React.FC = () => {
 
       console.log("DEBUG_LOAD_ROW", row);
 
+      // Always sync rowId with the row we actually loaded (or clear it if none)
+      setRowId(row?.id ?? null);
+
       if (!row) {
         setTitle(`Day ${day}`);
         setDescription("");
@@ -116,7 +119,6 @@ const AdminDailyLessons: React.FC = () => {
         return;
       }
 
-      setRowId(row.id);
       setTitle(row.title || `Day ${day}`);
       setDescription(row.description || "");
       setLastLoadedRow(row);
