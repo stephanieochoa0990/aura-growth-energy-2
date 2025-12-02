@@ -88,6 +88,7 @@ export default function Day3() {
         if (error) throw error;
 
         const row = data as CourseContentRow | null;
+        console.log("DAY 3 PREVIEW RAW ROW:", row);
 
         if (!row) {
           setSections([]);
