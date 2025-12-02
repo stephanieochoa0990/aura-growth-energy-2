@@ -353,8 +353,6 @@ const AdminDailyLessons: React.FC = () => {
         title: "Saved",
         description: "Lesson content has been updated.",
       });
-
-      await loadLesson(dayNumber);
     } catch (err: any) {
       console.error("Save error:", err);
       toast({

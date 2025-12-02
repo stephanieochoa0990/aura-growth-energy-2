@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
+import VideoBlock from "@/components/lesson/VideoBlock";
 
 type BlockType = "text" | "video";
 
@@ -157,11 +158,7 @@ export default function Day1() {
                     )}
 
                     {block.type === "video" && block.url && (
-                      <video
-                        src={block.url}
-                        controls
-                        className="w-full rounded-md border border-gold/30"
-                      />
+                      <VideoBlock url={block.url} title={`${section.title} video`} />
                     )}
                   </div>
                 ))}

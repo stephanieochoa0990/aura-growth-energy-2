@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import VideoBlock from '@/components/lesson/VideoBlock';
  
 interface LessonBlock {
   id: string;
@@ -239,14 +240,7 @@ export default function DayContent({
                             </div>
                           )}
                           {block.type === 'video' && block.url && (
-                            <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                              <iframe
-                                src={block.url}
-                                className="w-full h-full"
-                                allowFullScreen
-                                title={`${section.title} video`}
-                              />
-                            </div>
+                            <VideoBlock url={block.url} title={`${section.title} video`} />
                           )}
                         </div>
                       ))}
