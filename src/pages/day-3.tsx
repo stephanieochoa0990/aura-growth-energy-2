@@ -8,8 +8,8 @@ type BlockType = "text" | "video";
 interface LessonBlock {
   id: string;
   type: BlockType;
-  content?: string | null;
-  url?: string | null;
+  content: string;
+  url: string | null;
 }
 
 interface LessonSection {
@@ -30,41 +30,22 @@ interface CourseContentRow {
 
 const DAY_NUMBER = 3;
 
-const normalizeContent = (body: any, fallbackTitle: string): LessonSection[] => {
-  if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
-    return body.map((section: any, idx: number) => ({
-      id: section.id || `section-${idx}`,
-      title: section.title || fallbackTitle || `Section ${idx + 1}`,
-      number: section.number ?? idx + 1,
-      blocks: Array.isArray(section.blocks)
-        ? section.blocks.map((b: any, bIdx: number) => ({
-            id: b.id || `block-${idx}-${bIdx}`,
-            type: b.type === "video" ? "video" : "text",
-            content: b.content ?? "",
-            url: b.url ?? null,
-          }))
-        : [],
-    }));
-  }
-
-  if (Array.isArray(body) && body.length > 0) {
-    return [
-      {
-        id: "section-1",
-        title: fallbackTitle || "Lesson",
-        number: 1,
-        blocks: body.map((b: any, bIdx: number) => ({
-          id: b.id || `block-${bIdx}`,
-          type: b.type === "video" ? "video" : "text",
-          content: b.content ?? b.text ?? "",
-          url: b.url ?? null,
-        })),
-      },
-    ];
-  }
-
-  return [];
-};
+const normalizeContent = (body: any, fallbackTitle: string): LessonSection[] =>
+  Array.isArray(body)
+    ? body.map((section: any, idx: number) => ({
+        id: section?.id || `section-${idx}`,
+        title: section?.title || fallbackTitle || `Section ${idx + 1}`,
+        number: typeof section?.number === "number" ? section.number : idx + 1,
+        blocks: Array.isArray(section?.blocks)
+          ? section.blocks.map((b: any, bIdx: number) => ({
+              id: b?.id || `block-${idx}-${bIdx}`,
+              type: b?.type === "video" ? "video" : "text",
+              content: typeof b?.content === "string" ? b.content : "",
+              url: b?.url ?? null,
+            }))
+          : [],
+      }))
+    : [];
 
 export default function Day3() {
   const [loading, setLoading] = useState(true);
