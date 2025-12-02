@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import DayContent from './DayContent';
+import { normalizeContent } from '@/lib/normalizeContent';
 
 type BlockType = 'text' | 'video';
 
@@ -25,42 +26,6 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
   const [description, setDescription] = useState('');
   const [sections, setSections] = useState<LessonSection[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const normalizeContent = (body: any, fallbackTitle: string): LessonSection[] => {
-    if (Array.isArray(body) && body.length > 0 && body[0]?.blocks) {
-      return body.map((section: any, idx: number) => ({
-        id: section.id || `section-${idx}`,
-        title: section.title || fallbackTitle || `Section ${idx + 1}`,
-        number: section.number ?? idx + 1,
-        blocks: Array.isArray(section.blocks)
-          ? section.blocks.map((b: any, bIdx: number) => ({
-              id: b.id || `block-${idx}-${bIdx}`,
-              type: b.type === 'video' ? 'video' : 'text',
-              content: b.content ?? '',
-              url: b.url ?? null,
-            }))
-          : [],
-      }));
-    }
-
-    if (Array.isArray(body) && body.length > 0) {
-      return [
-        {
-          id: 'section-1',
-          title: fallbackTitle || 'Lesson',
-          number: 1,
-          blocks: body.map((b: any, bIdx: number) => ({
-            id: b.id || `block-${bIdx}`,
-            type: b.type === 'video' ? 'video' : 'text',
-            content: b.content ?? b.text ?? '',
-            url: b.url ?? null,
-          })),
-        },
-      ];
-    }
-
-    return [];
-  };
 
   useEffect(() => {
     const loadContent = async () => {
@@ -90,7 +55,7 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
         setTitle(row.title || `Day ${currentDay}`);
         setDescription(row.description || '');
         const normalized = normalizeContent(row.content, row.title || `Day ${currentDay}`);
-        setSections(normalized);
+        setSections(normalized.sections);
       } catch (error: any) {
         console.error('Error loading content:', error);
         toast({

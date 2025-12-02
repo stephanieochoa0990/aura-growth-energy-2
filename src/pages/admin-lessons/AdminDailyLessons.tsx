@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Save, Trash2, Video, ArrowUp, ArrowDown, ArrowLeft } from "lucide-react";
+import { normalizeContent } from "@/lib/normalizeContent";
 
 type BlockType = "text" | "video";
 
@@ -44,35 +45,6 @@ const dayOptions = [
 ];
 
 const createId = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random()}`);
-
-const normalizeContentBody = (body: any): LessonSection[] => {
-  const mapSections = (sections: any[]): LessonSection[] =>
-    sections.map((section: any, idx: number) => ({
-      id: section?.id || createId(),
-      title: section?.title ?? `Section ${idx + 1}`,
-      number: typeof section?.number === "number" ? section.number : idx + 1,
-      blocks: Array.isArray(section?.blocks)
-        ? section.blocks.map((b: any) => ({
-            id: b?.id || createId(),
-            type: b?.type === "video" ? "video" : "text",
-            content: typeof b?.content === "string" ? b.content : "",
-            url: b?.url ?? null,
-          }))
-        : [],
-    }));
-
-  if (!body) return [];
-
-  if (Array.isArray(body)) {
-    return mapSections(body);
-  }
-
-  if (Array.isArray(body.sections)) {
-    return mapSections(body.sections);
-  }
-
-  return [];
-};
 
 const AdminDailyLessons: React.FC = () => {
   const { toast } = useToast();
@@ -149,9 +121,9 @@ const AdminDailyLessons: React.FC = () => {
       setDescription(row.description || "");
       setLastLoadedRow(row);
 
-      const normalized = normalizeContentBody(row.content);
+      const normalized = normalizeContent(row.content, row.title || `Day ${day}`);
       console.log("DEBUG_NORMALIZED_SECTIONS", normalized);
-      setSections(normalized);
+      setSections(normalized.sections);
       setLoadState("ready");
     } catch (err: any) {
       console.error("Error loading lesson:", err);

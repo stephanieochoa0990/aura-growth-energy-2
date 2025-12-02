@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { Download, Trash2, CheckCircle, WifiOff, Wifi, HardDrive } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { normalizeContent } from '@/lib/normalizeContent';
 
 interface DownloadItem {
   dayNumber: number;
@@ -39,8 +40,12 @@ export default function DownloadManager() {
 
   const loadCachedContent = async () => {
     const content = await getAllContent();
-    setCachedContent(content);
-    const size = content.reduce((acc, item) => acc + (item.size || 0), 0);
+    const normalized = content.map((item) => ({
+      ...item,
+      content: item?.content ? normalizeContent(item.content) : { sections: [] },
+    }));
+    setCachedContent(normalized);
+    const size = normalized.reduce((acc, item) => acc + (item.size || 0), 0);
     setTotalSize(size);
   };
 
@@ -65,7 +70,8 @@ export default function DownloadManager() {
         ));
       }
 
-      await saveContent(dayNumber, { title, content: data, size: 1024 * 500 });
+      const normalized = data ? normalizeContent((data as any).content ?? data) : { sections: [] };
+      await saveContent(dayNumber, { title, content: normalized, size: 1024 * 500 });
 
       setDownloads(prev => prev.map(d => 
         d.dayNumber === dayNumber ? { ...d, status: 'completed' } : d
