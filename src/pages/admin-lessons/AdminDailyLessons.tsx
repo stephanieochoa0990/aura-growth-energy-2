@@ -291,6 +291,7 @@ const AdminDailyLessons: React.FC = () => {
         video_url: videoUrl,
         updated_at: new Date().toISOString(),
       };
+      const normalizedPayload = normalizeContent(payload.content, payload.title);
       console.log("DEBUG_SAVE_SECTIONS", sections);
       console.log("DEBUG_SAVE_PAYLOAD", payload);
 
@@ -313,8 +314,12 @@ const AdminDailyLessons: React.FC = () => {
         const newId = (data as any)?.id ?? null;
         setRowId(newId);
         await loadLesson(dayNumber, newId);
-        return;
       }
+
+      // Immediately reflect the saved values in the form so the UI matches the DB write
+      setTitle(payload.title);
+      setDescription(payload.description);
+      setSections(normalizedPayload.sections);
 
       toast({
         title: "Saved",
