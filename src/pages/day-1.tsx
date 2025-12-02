@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 import VideoBlock from "@/components/lesson/VideoBlock";
+import { normalizeContent } from "@/lib/normalizeContent";
 
 type BlockType = "text" | "video";
 
@@ -29,25 +30,6 @@ interface CourseContentRow {
 }
 
 const DAY_NUMBER = 1;
-
-const normalizeContent = (body: any, fallbackTitle: string): LessonSection[] => {
-  if (!body) return [];
-  const sectionsArray = Array.isArray(body) ? body : [body];
-
-  return sectionsArray.map((section: any, idx: number) => ({
-    id: section?.id || `section-${idx}`,
-    title: section?.title || fallbackTitle || `Section ${idx + 1}`,
-    number: typeof section?.number === "number" ? section.number : idx + 1,
-    blocks: Array.isArray(section?.blocks)
-      ? section.blocks.map((b: any, bIdx: number) => ({
-          id: b?.id || `block-${idx}-${bIdx}`,
-          type: b?.type === "video" ? "video" : "text",
-          content: typeof b?.content === "string" ? b.content : "",
-          url: b?.url ?? null,
-        }))
-      : [],
-  }));
-};
 
 export default function Day1() {
   const [loading, setLoading] = useState(true);
@@ -82,7 +64,8 @@ export default function Day1() {
         setTitle(row.title || title);
         setDescription(row.description || "");
         const normalized = normalizeContent(row.content, row.title || title);
-        setSections(normalized);
+        console.log("DAY 1 PREVIEW NORMALIZED:", normalized);
+        setSections(normalized.sections);
       } catch (err) {
         console.error("Error loading day 1:", err);
         setSections([]);
