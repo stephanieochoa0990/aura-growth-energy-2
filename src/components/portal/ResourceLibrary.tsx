@@ -4,7 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Play, BookOpen, FileText } from 'lucide-react';
+import { Download, Play, BookOpen, FileText, Pencil } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useToast } from '@/hooks/use-toast';
 
 interface ResourceLibraryProps {
   userId: string;
@@ -15,6 +19,11 @@ export default function ResourceLibrary({ userId }: ResourceLibraryProps) {
   const [filteredMaterials, setFilteredMaterials] = useState<any[]>([]);
   const [activeFilter, setActiveFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<any>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const { isAdmin } = usePermissions();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchAllMaterials();
@@ -102,15 +111,107 @@ export default function ResourceLibrary({ userId }: ResourceLibraryProps) {
                 <div className="flex-1 space-y-2">
                   <CardTitle className="text-base sm:text-lg text-[#D4AF37] flex items-center gap-2">
                     {getIcon(material.content_type)}
-                    {material.title}
+                    {editingId === material.id ? (
+                      <Input
+                        value={editValues.title ?? material.title}
+                        onChange={(e) =>
+                          setEditValues((prev: any) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                      />
+                    ) : (
+                      material.title
+                    )}
                   </CardTitle>
                   <CardDescription className="text-gray-400 text-sm">
-                    {material.description}
+                    {editingId === material.id ? (
+                      <Textarea
+                        value={editValues.description ?? material.description ?? ''}
+                        onChange={(e) =>
+                          setEditValues((prev: any) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        rows={3}
+                      />
+                    ) : (
+                      material.description
+                    )}
                   </CardDescription>
                 </div>
-                <Badge className={`${getTypeColor(material.content_type)} text-white text-xs shrink-0`}>
-                  Day {material.day_number}
-                </Badge>
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <Badge className={`${getTypeColor(material.content_type)} text-white text-xs`}>
+                    Day {material.day_number}
+                  </Badge>
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          if (editingId === material.id) {
+                            setEditingId(null);
+                            setEditValues({});
+                          } else {
+                            setEditingId(material.id);
+                            setEditValues({
+                              title: material.title,
+                              description: material.description,
+                              content_url: material.content_url,
+                            });
+                          }
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      {editingId === material.id && (
+                        <Button
+                          size="sm"
+                          className="h-8 px-3"
+                          disabled={savingId === material.id}
+                          onClick={async () => {
+                            try {
+                              setSavingId(material.id);
+                              const { error } = await supabase
+                                .from('class_materials')
+                                .update({
+                                  title: editValues.title ?? material.title,
+                                  description: editValues.description ?? material.description,
+                                  content_url: editValues.content_url ?? material.content_url,
+                                })
+                                .eq('id', material.id);
+
+                              if (error) throw error;
+
+                              await fetchAllMaterials();
+                              setEditingId(null);
+                              setEditValues({});
+                              toast({
+                                title: 'Resource updated',
+                                description: 'Changes have been saved.',
+                              });
+                            } catch (err) {
+                              console.error('Error updating material:', err);
+                              toast({
+                                title: 'Save failed',
+                                description: 'Could not save resource. Please try again.',
+                                variant: 'destructive',
+                              });
+                            } finally {
+                              setSavingId(null);
+                            }
+                          }}
+                        >
+                          {savingId === material.id ? 'Saving…' : 'Save'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0">

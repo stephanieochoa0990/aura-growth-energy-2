@@ -4,10 +4,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, ArrowRight, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import VideoBlock from '@/components/lesson/VideoBlock';
 import { VideoPlayer } from '@/components/portal/VideoPlayer';
+import { supabase } from '@/lib/supabase';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useToast } from '@/hooks/use-toast';
  
 interface LessonBlock {
   id: string;
@@ -42,8 +46,15 @@ export default function DayContent({
   const [openSections, setOpenSections] = useState<string[]>([sections[0]?.id]);
   const [completedSections, setCompletedSections] = useState<string[]>([]);
   const [lockSections, setLockSections] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(title);
+  const [editDescription, setEditDescription] = useState(description);
+  const [editSections, setEditSections] = useState<ContentSection[]>(sections);
+  const [saving, setSaving] = useState(false);
   const progressKey = `day${dayNumber}_progress`;
   const lockKey = `day${dayNumber}_lock_enabled`;
+  const { isAdmin } = usePermissions();
+  const { toast } = useToast();
 
   useEffect(() => {
     const saved = localStorage.getItem(progressKey);
@@ -68,6 +79,14 @@ export default function DayContent({
       }
     }
   }, [progressKey, lockKey, continueVideoId, sections]);
+
+  // Keep editable copies in sync when day/content changes
+  useEffect(() => {
+    setEditTitle(title);
+    setEditDescription(description);
+    setEditSections(sections);
+    setIsEditing(false);
+  }, [title, description, sections]);
 
 
   const toggleSection = (sectionId: string, index: number) => {
@@ -117,6 +136,93 @@ export default function DayContent({
 
   const progress = (completedSections.length / sections.length) * 100;
 
+  const handleBlockContentChange = (sectionId: string, blockId: string, value: string) => {
+    setEditSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              blocks: section.blocks.map(block =>
+                block.id === blockId ? { ...block, content: value } : block
+              ),
+            }
+          : section
+      )
+    );
+  };
+
+  const handleSaveEdits = async () => {
+    try {
+      setSaving(true);
+
+      // Build payload similar to AdminDailyLessons
+      const payloadSections = editSections.map((section, idx) => ({
+        id: section.id,
+        title: section.title,
+        number: idx + 1,
+        blocks: (section.blocks || []).map((b) => ({
+          id: b.id,
+          type: b.type,
+          content: b.content ?? '',
+          url: b.url ?? null,
+        })),
+      }));
+
+      const allBlocks = payloadSections.flatMap((s) => s.blocks);
+      const videoUrl =
+        allBlocks.find((b) => b.type === 'video' && b.url)?.url || null;
+
+      const payload = {
+        title: editTitle,
+        description: editDescription,
+        content: { sections: payloadSections },
+        video_url: videoUrl,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Find existing course_content row for this day
+      const { data: existing, error: selectError } = await supabase
+        .from('course_content')
+        .select('id')
+        .eq('day_number', dayNumber)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (selectError) throw selectError;
+
+      if (existing?.id) {
+        const { error: updateError } = await supabase
+          .from('course_content')
+          .update(payload)
+          .eq('id', existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('course_content')
+          .insert({ day_number: dayNumber, ...payload });
+
+        if (insertError) throw insertError;
+      }
+
+      setIsEditing(false);
+      toast({
+        title: 'Lesson updated',
+        description: `Day ${dayNumber} content has been saved.`,
+      });
+    } catch (error) {
+      console.error('Error saving edits:', error);
+      toast({
+        title: 'Save failed',
+        description: 'Could not save lesson content. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
       {/* Header */}
@@ -125,14 +231,59 @@ export default function DayContent({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Day {dayNumber}</p>
-              <CardTitle className="text-xl sm:text-2xl md:text-3xl leading-tight">{title}</CardTitle>
-              <p className="text-sm sm:text-base text-muted-foreground mt-2">{description}</p>
+              {isEditing ? (
+                <>
+                  <Input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="mb-2"
+                  />
+                  <Textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={2}
+                  />
+                </>
+              ) : (
+                <>
+                  <CardTitle className="text-xl sm:text-2xl md:text-3xl leading-tight">
+                    {title}
+                  </CardTitle>
+                  <p className="text-sm sm:text-base text-muted-foreground mt-2">
+                    {description}
+                  </p>
+                </>
+              )}
             </div>
-            <div className="text-center sm:text-right shrink-0">
-              <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {Math.round(progress)}%
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="text-center">
+                <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {Math.round(progress)}%
+                </div>
+                <p className="text-xs text-muted-foreground">Complete</p>
               </div>
-              <p className="text-xs text-muted-foreground">Complete</p>
+              {isAdmin && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setIsEditing((prev) => !prev)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  {isEditing && (
+                    <Button
+                      size="sm"
+                      className="min-h-[32px]"
+                      onClick={handleSaveEdits}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving…' : 'Save'}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -204,9 +355,26 @@ export default function DayContent({
                           )}
                         </div>
                         <div className="text-left flex-1 min-w-0">
-                          <h3 className="font-semibold text-base sm:text-lg leading-tight break-words">
-                            {index + 1}. {section.title}
-                          </h3>
+                          {isEditing ? (
+                            <Input
+                              value={
+                                editSections.find((s) => s.id === section.id)?.title ??
+                                section.title
+                              }
+                              onChange={(e) =>
+                                setEditSections((prev) =>
+                                  prev.map((s) =>
+                                    s.id === section.id ? { ...s, title: e.target.value } : s
+                                  )
+                                )
+                              }
+                              className="text-base sm:text-lg font-semibold"
+                            />
+                          ) : (
+                            <h3 className="font-semibold text-base sm:text-lg leading-tight break-words">
+                              {index + 1}. {section.title}
+                            </h3>
+                          )}
                           {section.duration && (
                             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                               Duration: {section.duration}
@@ -234,11 +402,31 @@ export default function DayContent({
                       {section.blocks.map((block) => (
                         <div key={block.id} className="space-y-2">
                           {block.type === 'text' && (
-                            <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none">
-                              <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-                                {block.content}
-                              </div>
-                            </div>
+                            <>
+                              {isEditing ? (
+                                <Textarea
+                                  value={
+                                    editSections
+                                      .find((s) => s.id === section.id)
+                                      ?.blocks.find((b) => b.id === block.id)?.content ?? ''
+                                  }
+                                  onChange={(e) =>
+                                    handleBlockContentChange(
+                                      section.id,
+                                      block.id,
+                                      e.target.value,
+                                    )
+                                  }
+                                  rows={4}
+                                />
+                              ) : (
+                                <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-none">
+                                  <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {block.content}
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           )}
                           {block.type === 'video' && block.url && (
                             <VideoPlayer
