@@ -7,7 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Award, Download, CheckCircle, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export function CertificateGenerator() {
+interface CertificateGeneratorProps {
+  userId?: string;
+  isPreview?: boolean;
+}
+
+export function CertificateGenerator({ userId, isPreview }: CertificateGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [certificate, setCertificate] = useState<any>(null);
@@ -17,18 +22,20 @@ export function CertificateGenerator() {
 
   useEffect(() => {
     checkCompletionStatus();
-  }, []);
+  }, [userId]);
 
   const checkCompletionStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      const targetUserId = userId ?? authUser.id;
 
       // Check completion status
       const { data: status } = await supabase
         .from('completion_status')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .single();
 
       setCompletionStatus(status);
@@ -37,7 +44,7 @@ export function CertificateGenerator() {
       const { data: cert } = await supabase
         .from('certificates')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .single();
 
       if (cert) {
@@ -50,7 +57,7 @@ export function CertificateGenerator() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name')
-          .eq('id', user.id)
+          .eq('id', targetUserId)
           .single();
 
         if (profile?.full_name) {

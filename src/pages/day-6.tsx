@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 import VideoBlock from "@/components/lesson/VideoBlock";
+import { VideoPlayer } from "@/components/portal/VideoPlayer";
 import { normalizeContent } from "@/lib/normalizeContent";
 
 type BlockType = "text" | "video";
@@ -125,7 +126,13 @@ export default function Day6() {
                     )}
 
                     {block.type === "video" && block.url && (
-                      <VideoBlock url={block.url} title={`${section.title} video`} />
+                      <VideoPlayer
+                        videoId={block.id}
+                        videoUrl={block.url}
+                        title={`${section.title} video`}
+                        dayNumber={DAY_NUMBER}
+                        sectionNumber={section.number}
+                      />
                     )}
                   </div>
                 ))}

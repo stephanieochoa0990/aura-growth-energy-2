@@ -7,7 +7,12 @@ import { supabase } from '@/lib/supabase';
 import { Mail, Bell, Trophy, Calendar, Megaphone, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export function EmailPreferences() {
+interface EmailPreferencesProps {
+  userId?: string;
+  isPreview?: boolean;
+}
+
+export function EmailPreferences({ userId, isPreview }: EmailPreferencesProps) {
   const [preferences, setPreferences] = useState({
     daily_completion: true,
     missed_day_reminder: true,
@@ -21,17 +26,19 @@ export function EmailPreferences() {
 
   useEffect(() => {
     loadPreferences();
-  }, []);
+  }, [userId]);
 
   const loadPreferences = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const targetUserId = userId ?? user.id;
+
       const { data, error } = await supabase
         .from('email_preferences')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .single();
 
       if (data) {
@@ -39,7 +46,7 @@ export function EmailPreferences() {
       } else if (error?.code === 'PGRST116') {
         // No preferences found, create default
         await supabase.from('email_preferences').insert({
-          user_id: user.id,
+          user_id: targetUserId,
           ...preferences
         });
       }
@@ -56,10 +63,12 @@ export function EmailPreferences() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const targetUserId = userId ?? user.id;
+
       const { error } = await supabase
         .from('email_preferences')
         .upsert({
-          user_id: user.id,
+          user_id: targetUserId,
           ...preferences,
           updated_at: new Date().toISOString()
         });

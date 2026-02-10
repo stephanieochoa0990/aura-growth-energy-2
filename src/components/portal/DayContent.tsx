@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import VideoBlock from '@/components/lesson/VideoBlock';
+import { VideoPlayer } from '@/components/portal/VideoPlayer';
  
 interface LessonBlock {
   id: string;
@@ -240,7 +241,13 @@ export default function DayContent({
                             </div>
                           )}
                           {block.type === 'video' && block.url && (
-                            <VideoBlock url={block.url} title={`${section.title} video`} />
+                            <VideoPlayer
+                              videoId={block.id}
+                              videoUrl={block.url}
+                              title={`${section.title} video`}
+                              dayNumber={dayNumber}
+                              sectionNumber={section.number ?? index + 1}
+                            />
                           )}
                         </div>
                       ))}

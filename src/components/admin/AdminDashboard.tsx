@@ -18,6 +18,7 @@ import StudentManagement from './StudentManagement';
 import Analytics from './Analytics';
 import AnnouncementManager from './AnnouncementManager';
 import LiveSessionManager from './LiveSessionManager';
+import ResourceUploader from './ResourceUploader';
 import ReviewModeration from './ReviewModeration';
 import ReviewAnalytics from './ReviewAnalytics';
 import RoleManager from './RoleManager';
@@ -50,6 +51,9 @@ const AdminDashboard: React.FC = () => {
     completionRate: 0,
     certificatesIssued: 0
   });
+  const [resourceDay, setResourceDay] = useState<number>(1);
+  const [previewStudentId, setPreviewStudentId] = useState<string>('');
+  const [previewStudents, setPreviewStudents] = useState<UserProfile[]>([]);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,6 +65,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     checkAdminAccess();
     fetchDashboardStats();
+    loadPreviewStudents();
   }, []);
 
   const checkAdminAccess = async () => {
@@ -150,6 +155,23 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const loadPreviewStudents = async () => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, role')
+        .eq('role', 'student')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (data) {
+        setPreviewStudents(data as UserProfile[]);
+      }
+    } catch (error) {
+      console.error('Error loading students for preview:', error);
+    }
+  };
+
   // --------------------------
   // SIGN OUT
   // --------------------------
@@ -217,17 +239,144 @@ const AdminDashboard: React.FC = () => {
             Student View (Preview & Edit)
           </h2>
 
-          <div className="flex flex-wrap gap-3">
-            <Button variant="outline" onClick={() => navigate('/class/daily')}>Daily Lessons</Button>
-            <Button variant="outline" onClick={() => navigate('/class/dashboard')}>Student Dashboard</Button>
-            <Button variant="outline" onClick={() => navigate('/class/resources')}>Resources Library</Button>
-            <Button variant="outline" onClick={() => navigate('/class/progress')}>Progress</Button>
-            <Button variant="outline" onClick={() => navigate('/class/forum')}>Forum</Button>
-            <Button variant="outline" onClick={() => navigate('/class/messages')}>Messages</Button>
-            <Button variant="outline" onClick={() => navigate('/class/offline')}>Offline Mode</Button>
-            <Button variant="outline" onClick={() => navigate('/class/live')}>Live Sessions</Button>
-            <Button variant="outline" onClick={() => navigate('/class/certificate')}>Certificate Page</Button>
-            <Button variant="outline" onClick={() => navigate('/class/email')}>Email Tool</Button>
+          <div className="flex flex-col gap-3 mb-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-charcoal/70">Preview as:</span>
+              <select
+                value={previewStudentId}
+                onChange={(e) => setPreviewStudentId(e.target.value)}
+                className="border rounded px-3 py-2 text-sm"
+              >
+                <option value="">Yourself</option>
+                {previewStudents.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.full_name} ({s.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=daily&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Daily Lessons
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=dashboard&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Student Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=resources&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Resources Library
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=progress&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Progress
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=community&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Forum
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=messages&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Messages
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=offline&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Offline Mode
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=sessions&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Live Sessions
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=certificate&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Certificate Page
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  navigate(
+                    `/student-portal?tab=notifications&preview=1${
+                      previewStudentId ? `&previewUserId=${previewStudentId}` : ''
+                    }`,
+                  )
+                }
+              >
+                Email Tool
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -290,7 +439,7 @@ const AdminDashboard: React.FC = () => {
             ADMIN TABS (PERMISSION SECURED)
         -------------------------- */}
         <Tabs defaultValue="students" className="space-y-4">
-          <TabsList className="grid grid-cols-11">
+          <TabsList className="grid grid-cols-12">
 
             {hasPermission('can_view_analytics') && (
               <TabsTrigger value="comprehensive">Comprehensive</TabsTrigger>
@@ -326,6 +475,10 @@ const AdminDashboard: React.FC = () => {
 
             {hasPermission('can_manage_users') && (
               <TabsTrigger value="users">User Roles</TabsTrigger>
+            )}
+
+            {hasPermission('can_edit_content') && (
+              <TabsTrigger value="resources-admin">Resources</TabsTrigger>
             )}
 
           </TabsList>
@@ -381,6 +534,38 @@ const AdminDashboard: React.FC = () => {
           {hasPermission('can_manage_users') && (
             <TabsContent value="users">
               <UserRoleAssignment />
+            </TabsContent>
+          )}
+
+          {hasPermission('can_edit_content') && (
+            <TabsContent value="resources-admin">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resource Library Content</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-charcoal/70">Day</span>
+                    <select
+                      value={resourceDay}
+                      onChange={(e) => setResourceDay(Number(e.target.value))}
+                      className="border rounded px-3 py-2 text-sm"
+                    >
+                      {Array.from({ length: 7 }, (_, i) => i + 1).map((day) => (
+                        <option key={day} value={day}>
+                          Day {day}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <ResourceUploader
+                    dayNumber={resourceDay}
+                    onUploadComplete={() => {
+                      // no-op for now; student views read directly from class_materials
+                    }}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
           )}
 

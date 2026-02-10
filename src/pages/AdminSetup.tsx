@@ -47,32 +47,19 @@ export default function AdminSetup() {
     try {
       if (!user) throw new Error('Not authenticated');
 
-      // Verify token exists and is unused
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('setup_tokens')
-        .select('*')
-        .eq('token', setupToken)
-        .eq('used', false)
-        .maybeSingle();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
 
-      if (tokenError) throw tokenError;
-      if (!tokenData) throw new Error('Invalid or already used setup token');
+      const { data, error } = await supabase.functions.invoke('promote-admin', {
+        body: { setupToken },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
-      // Mark token as used
-      const { error: updateTokenError } = await supabase
-        .from('setup_tokens')
-        .update({ used: true, used_at: new Date().toISOString(), used_by: user.id })
-        .eq('id', tokenData.id);
-
-      if (updateTokenError) throw updateTokenError;
-
-      // Set user as admin
-      const { error: adminError } = await supabase
-        .from('profiles')
-        .update({ is_admin: true })
-        .eq('id', user.id);
-
-      if (adminError) throw adminError;
+      if (error) {
+        throw error;
+      }
 
       setSuccess(true);
       setTimeout(() => navigate('/admin'), 2000);

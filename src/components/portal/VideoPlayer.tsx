@@ -114,35 +114,36 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (!videoRef.current) return;
     const currentVideoTime = videoRef.current.currentTime;
     const duration = videoRef.current.duration;
-    
+
     if (!currentVideoTime || !duration || duration === 0) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log('No session found, skipping video progress save');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found, skipping video progress save');
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('save-video-progress', {
-        body: {
-          videoId,
-          videoTitle: title,
-          dayNumber,
-          sectionNumber,
-          currentTime: currentVideoTime,
-          duration: duration,
-          forceComplete: false
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
+      const completion = (currentVideoTime / duration) * 100;
+
+      const { error } = await supabase
+        .from('video_progress')
+        .upsert(
+          {
+            user_id: user.id,
+            video_id: videoId,
+            video_title: title,
+            day_number: dayNumber,
+            section_number: sectionNumber,
+            last_position: currentVideoTime,
+            completion_percentage: completion,
+            last_watched_at: new Date().toISOString()
+          }
+        );
 
       if (error) throw error;
 
       if (onProgressUpdate) {
-        const completion = (currentVideoTime / duration) * 100;
         onProgressUpdate(completion);
       }
     } catch (error) {

@@ -34,6 +34,9 @@ import AdminDailyLessons from "./pages/admin-lessons/AdminDailyLessons";
 // ---- Admin Preview Pages ----
 import DailyLessons from "./pages/DailyLessons";
 
+// ---- Student Portal Route ----
+import StudentPortal from "./components/StudentPortal";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -82,6 +85,11 @@ const App = () => (
                 ADMIN PREVIEW PAGES
             -------------------------- */}
             <Route path="/class/daily" element={<DailyLessons />} />
+
+            {/* -------------------------
+                STUDENT PORTAL
+            -------------------------- */}
+            <Route path="/student-portal" element={<StudentPortal />} />
 
             {/* -------------------------
                 FALLBACK

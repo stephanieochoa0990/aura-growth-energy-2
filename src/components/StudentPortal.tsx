@@ -23,9 +23,12 @@ import { CertificateGenerator } from './portal/CertificateGenerator';
 import { EmailPreferences } from './portal/EmailPreferences';
 import LiveSessionsView from './portal/LiveSessionsView';
 import MessagingHub from './messaging/MessagingHub';
+import { useSearchParams } from 'react-router-dom';
+import { usePermissions } from '@/hooks/usePermissions';
 export default function StudentPortal() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { toast } = useToast();
@@ -38,6 +41,12 @@ export default function StudentPortal() {
     requestNotificationPermission,
     sendNotification 
   } = usePWA();
+
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') ?? 'daily';
+  const isPreview = searchParams.get('preview') === '1';
+  const previewUserId = searchParams.get('previewUserId');
+  const { isAdmin } = usePermissions();
 
   useEffect(() => {
     checkUser();
@@ -77,7 +86,6 @@ export default function StudentPortal() {
       
       if (user) {
         setUser(user);
-        await fetchProfile(user.id);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -95,6 +103,19 @@ export default function StudentPortal() {
 
     if (data) setProfile(data);
   }
+
+  // Decide which user we're \"viewing\" (self vs preview target) and load their profile
+  useEffect(() => {
+    if (!user) return;
+
+    const targetId =
+      isPreview && previewUserId && isAdmin
+        ? previewUserId
+        : user.id;
+
+    setViewUserId(targetId);
+    fetchProfile(targetId);
+  }, [user, isPreview, previewUserId, isAdmin]);
   
   async function fetchNotifications() {
     if (!user) return;
@@ -183,6 +204,12 @@ export default function StudentPortal() {
           </div>
           
           <div className="gold-divider my-6"></div>
+
+          {isPreview && (
+            <div className="mt-4 rounded-md border border-yellow-500/60 bg-yellow-500/10 px-3 py-2 text-xs sm:text-sm text-yellow-100">
+              You are viewing the student portal in preview mode.
+            </div>
+          )}
           
           <div className="mt-6">
             <div className="flex justify-between items-center mb-3">
@@ -201,7 +228,7 @@ export default function StudentPortal() {
 
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <Tabs defaultValue="daily" className="space-y-6">
+        <Tabs defaultValue={initialTab} className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="bg-ivory border border-gold/20 inline-flex sm:grid sm:grid-cols-5 lg:grid-cols-10 min-w-max sm:min-w-0 sm:w-full">
               <TabsTrigger value="daily" className="data-[state=active]:bg-gold data-[state=active]:text-charcoal px-3 py-2 text-sm whitespace-nowrap hover:text-gold transition-colors">
@@ -248,11 +275,11 @@ export default function StudentPortal() {
           </div>
 
           <TabsContent value="daily" className="space-y-4">
-            <DailyContent currentDay={profile?.current_day || 1} userId={user.id} />
+            <DailyContent currentDay={profile?.current_day || 1} userId={viewUserId ?? user.id} />
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-4">
-            <ProgressDashboard userId={user.id} currentDay={profile?.current_day || 1} />
+            <ProgressDashboard userId={viewUserId ?? user.id} currentDay={profile?.current_day || 1} />
           </TabsContent>
 
           <TabsContent value="sessions" className="space-y-4">
@@ -260,15 +287,15 @@ export default function StudentPortal() {
           </TabsContent>
           
           <TabsContent value="resources" className="space-y-4">
-            <ResourceLibrary userId={user.id} />
+            <ResourceLibrary userId={viewUserId ?? user.id} />
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4">
-            <ProgressTracker userId={user.id} currentDay={profile?.current_day || 1} />
+            <ProgressTracker userId={viewUserId ?? user.id} currentDay={profile?.current_day || 1} />
           </TabsContent>
 
           <TabsContent value="community" className="space-y-4">
-            <CommunityHub userId={user.id} userProfile={profile} />
+            <CommunityHub userId={viewUserId ?? user.id} userProfile={profile} />
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-4">
@@ -283,11 +310,11 @@ export default function StudentPortal() {
           </TabsContent>
 
           <TabsContent value="certificate" className="space-y-4">
-            <CertificateGenerator />
+            <CertificateGenerator userId={viewUserId ?? user.id} isPreview={isPreview} />
           </TabsContent>
           
           <TabsContent value="notifications" className="space-y-4">
-            <EmailPreferences />
+            <EmailPreferences userId={viewUserId ?? user.id} isPreview={isPreview} />
           </TabsContent>
         </Tabs>
       </main>
