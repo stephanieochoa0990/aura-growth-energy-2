@@ -51,9 +51,8 @@ export default function DayPage({ dayNumber }: { dayNumber: number }) {
           .eq('day_number', dayNumber)
           .order('order_index', { ascending: true });
 
-        if (sectionError) throw sectionError;
-
-        if (sectionRows && sectionRows.length > 0) {
+        // If table doesn't exist yet (migration not run), fall back to legacy
+        if (!sectionError && sectionRows && sectionRows.length > 0) {
           if (!cancelled) setMode('sections');
           return;
         }

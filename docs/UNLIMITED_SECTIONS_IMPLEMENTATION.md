@@ -26,10 +26,25 @@ Existing `course_content` and the current lesson UI are unchanged. When a day ha
 
 ---
 
+## How to fix "Could not find the table 'public.day_sections'"
+
+The app will fall back to the existing lesson content if the table is missing, but to use **Unlimited Sections** you must create the table:
+
+1. **Option A – Supabase Dashboard**  
+   - Open your project at [supabase.com/dashboard](https://supabase.com/dashboard) → **SQL Editor**.  
+   - Copy the contents of `supabase/migrations/20260210_day_sections.sql` and run it.
+
+2. **Option B – Supabase CLI**  
+   - From the project root: `supabase db push`  
+   - Or link and push: `supabase link` then `supabase db push`.
+
+After the migration runs, refresh the app; Daily Lessons will use the new sections when you add them.
+
+---
+
 ## How to test
 
-1. **Apply migration**  
-   Run the migration (e.g. `supabase db push` or run the SQL in the Supabase SQL editor).
+1. **Apply migration** (see above).
 
 2. **Admin: add and manage sections (Day 1)**  
    - Log in as admin.  

@@ -41,9 +41,8 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
           .eq('day_number', currentDay)
           .order('order_index', { ascending: true });
 
-        if (sectionError) throw sectionError;
-
-        if (sectionRows && sectionRows.length > 0) {
+        // If table doesn't exist yet (migration not run), fall back to legacy
+        if (!sectionError && sectionRows && sectionRows.length > 0) {
           if (!cancelled) setMode('sections');
           return;
         }
