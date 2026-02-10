@@ -73,12 +73,20 @@ const AdminDashboard: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return navigate('/admin/login');
 
-      const { data: profile } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('id', user.id)
-  .single();
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
+      if (profileError) {
+        toast({
+          title: "Error",
+          description: profileError.message || "Could not load profile.",
+          variant: "destructive"
+        });
+        return navigate('/admin/login');
+      }
 
       const adminRoles = ['admin', 'super_admin', 'content_manager', 'moderator', 'support_staff'];
 

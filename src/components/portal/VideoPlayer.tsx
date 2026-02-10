@@ -69,7 +69,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       .select('last_position, completion_percentage')
       .eq('user_id', user.id)
       .eq('video_id', videoId)
-      .single();
+      .maybeSingle();
 
     if (data?.last_position && !hasLoadedInitialProgress) {
       // Wait for video to be ready before seeking

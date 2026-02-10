@@ -58,7 +58,7 @@ export default function StudentWelcome() {
         .eq('user_id', user.id)
         .order('last_watched_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (progressData && progressData.completion_percentage < 100) {
         setLastVideoProgress({

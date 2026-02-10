@@ -99,9 +99,10 @@ export default function StudentPortal() {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (data) setProfile(data);
+    else setProfile(null);
   }
 
   // Decide which user we're \"viewing\" (self vs preview target) and load their profile

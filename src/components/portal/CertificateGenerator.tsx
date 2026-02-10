@@ -36,7 +36,7 @@ export function CertificateGenerator({ userId, isPreview }: CertificateGenerator
         .from('completion_status')
         .select('*')
         .eq('user_id', targetUserId)
-        .single();
+        .maybeSingle();
 
       setCompletionStatus(status);
 
@@ -45,7 +45,7 @@ export function CertificateGenerator({ userId, isPreview }: CertificateGenerator
         .from('certificates')
         .select('*')
         .eq('user_id', targetUserId)
-        .single();
+        .maybeSingle();
 
       if (cert) {
         setCertificate(cert);
@@ -58,7 +58,7 @@ export function CertificateGenerator({ userId, isPreview }: CertificateGenerator
           .from('profiles')
           .select('full_name')
           .eq('id', targetUserId)
-          .single();
+          .maybeSingle();
 
         if (profile?.full_name) {
           setStudentName(profile.full_name);

@@ -41,7 +41,7 @@ export const usePermissions = () => {
         .from('profiles')
         .select('role, is_admin')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         setRole(profile.role || 'student');

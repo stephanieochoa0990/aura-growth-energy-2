@@ -32,10 +32,10 @@ const AppLayout: React.FC = () => {
           .from('profiles')
           .select('is_admin, role')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         // Check both is_admin flag and role-based access
-        const adminRoles = ['super_admin', 'content_manager', 'moderator', 'support_staff'];
+        const adminRoles = ['admin', 'super_admin', 'content_manager', 'moderator', 'support_staff'];
         if (profile && (profile.is_admin === true || adminRoles.includes(profile.role))) {
           setIsAdmin(true);
         }

@@ -22,7 +22,7 @@ export default function AdminSetup() {
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      navigate('/admin-login');
+      navigate('/admin/login');
       return;
     }
     setUser(user);

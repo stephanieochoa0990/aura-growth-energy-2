@@ -196,7 +196,7 @@ const IntegrationToolkit = () => {
                     </p>
                     
                     <Button 
-                      onClick={() => navigate(`/day${completedDays + 1}`)} 
+                      onClick={() => navigate(`/day-${completedDays + 1}`)} 
                       className="bg-purple-600 hover:bg-purple-700 text-white"
                       disabled={completedDays >= 7}
                     >

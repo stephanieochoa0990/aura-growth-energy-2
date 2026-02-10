@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import DayContent from './DayContent';
+import DaySectionsView from './DaySectionsView';
 import { normalizeContent } from '@/lib/normalizeContent';
 
 type BlockType = 'text' | 'video';
@@ -22,15 +23,30 @@ interface LessonSection {
 
 export default function DailyContent({ currentDay, userId: _userId }: { currentDay: number; userId: string }) {
   const { toast } = useToast();
+  const [mode, setMode] = useState<'loading' | 'sections' | 'legacy'>('loading');
   const [title, setTitle] = useState(`Day ${currentDay}`);
   const [description, setDescription] = useState('');
   const [sections, setSections] = useState<LessonSection[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadContent = async () => {
       try {
-        setLoading(true);
+        setMode('loading');
+
+        const { data: sectionRows, error: sectionError } = await supabase
+          .from('day_sections')
+          .select('id')
+          .eq('day_number', currentDay)
+          .order('order_index', { ascending: true });
+
+        if (sectionError) throw sectionError;
+
+        if (sectionRows && sectionRows.length > 0) {
+          if (!cancelled) setMode('sections');
+          return;
+        }
 
         const { data, error } = await supabase
           .from('course_content')
@@ -43,35 +59,39 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
         if (error) throw error;
 
         const row = data as any;
-
-        if (!row) {
-          setTitle(`Day ${currentDay}`);
-          setDescription('No content available yet');
-          setSections([]);
-          setLoading(false);
-          return;
+        if (!cancelled) {
+          if (!row) {
+            setTitle(`Day ${currentDay}`);
+            setDescription('No content available yet');
+            setSections([]);
+          } else {
+            setTitle(row.title || `Day ${currentDay}`);
+            setDescription(row.description || '');
+            const normalized = normalizeContent(row.content, row.title || `Day ${currentDay}`);
+            setSections(normalized.sections);
+          }
+          setMode('legacy');
         }
-
-        setTitle(row.title || `Day ${currentDay}`);
-        setDescription(row.description || '');
-        const normalized = normalizeContent(row.content, row.title || `Day ${currentDay}`);
-        setSections(normalized.sections);
       } catch (error: any) {
         console.error('Error loading content:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Could not load content.',
-          variant: 'destructive'
-        });
-      } finally {
-        setLoading(false);
+        if (!cancelled) {
+          toast({
+            title: 'Error',
+            description: error.message || 'Could not load content.',
+            variant: 'destructive'
+          });
+          setMode('legacy');
+        }
       }
     };
 
     loadContent();
+    return () => {
+      cancelled = true;
+    };
   }, [currentDay, toast]);
 
-  if (loading) {
+  if (mode === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -79,7 +99,10 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
     );
   }
 
-  // Use the unified DayContent component for all days
+  if (mode === 'sections') {
+    return <DaySectionsView dayNumber={currentDay} />;
+  }
+
   return (
     <DayContent
       dayNumber={currentDay}
