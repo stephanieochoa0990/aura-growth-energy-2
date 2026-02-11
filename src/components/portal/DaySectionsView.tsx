@@ -327,10 +327,18 @@ export default function DaySectionsView({ dayNumber }: { dayNumber: number }) {
       )}
 
       {sections.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No sections for this day yet.
-          {isAdmin && ' Use "Add Section" to create one.'}
-        </p>
+        <div className="rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-8 text-center">
+          <p className="text-muted-foreground mb-4">
+            No sections for this day yet.
+            {isAdmin && ' Add your first section to get started.'}
+          </p>
+          {isAdmin && (
+            <Button onClick={openAdd} size="lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Add your first section
+            </Button>
+          )}
+        </div>
       )}
 
       <div className="space-y-4">

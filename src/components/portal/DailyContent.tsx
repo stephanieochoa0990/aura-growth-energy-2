@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import DayContent from './DayContent';
 import DaySectionsView from './DaySectionsView';
 import { normalizeContent } from '@/lib/normalizeContent';
@@ -23,6 +24,7 @@ interface LessonSection {
 
 export default function DailyContent({ currentDay, userId: _userId }: { currentDay: number; userId: string }) {
   const { toast } = useToast();
+  const { isAdmin } = usePermissions();
   const [mode, setMode] = useState<'loading' | 'sections' | 'legacy'>('loading');
   const [title, setTitle] = useState(`Day ${currentDay}`);
   const [description, setDescription] = useState('');
@@ -41,8 +43,8 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
           .eq('day_number', currentDay)
           .order('order_index', { ascending: true });
 
-        // If table doesn't exist yet (migration not run), fall back to legacy
-        if (!sectionError && sectionRows && sectionRows.length > 0) {
+        // If table exists: use sections view when there are sections OR when admin (so they can add sections)
+        if (!sectionError && (sectionRows?.length > 0 || isAdmin)) {
           if (!cancelled) setMode('sections');
           return;
         }
@@ -88,7 +90,7 @@ export default function DailyContent({ currentDay, userId: _userId }: { currentD
     return () => {
       cancelled = true;
     };
-  }, [currentDay, toast]);
+  }, [currentDay, isAdmin, toast]);
 
   if (mode === 'loading') {
     return (

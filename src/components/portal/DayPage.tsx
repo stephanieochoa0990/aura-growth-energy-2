@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { VideoPlayer } from '@/components/portal/VideoPlayer';
 import { normalizeContent } from '@/lib/normalizeContent';
 import DaySectionsView from '@/components/portal/DaySectionsView';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type BlockType = 'text' | 'video';
 
@@ -35,6 +36,7 @@ interface CourseContentRow {
  * otherwise falls back to course_content (existing lesson model). Safe for existing content.
  */
 export default function DayPage({ dayNumber }: { dayNumber: number }) {
+  const { isAdmin } = usePermissions();
   const [mode, setMode] = useState<'loading' | 'sections' | 'legacy'>('loading');
   const [title, setTitle] = useState(`Day ${dayNumber}`);
   const [description, setDescription] = useState('');
@@ -51,8 +53,8 @@ export default function DayPage({ dayNumber }: { dayNumber: number }) {
           .eq('day_number', dayNumber)
           .order('order_index', { ascending: true });
 
-        // If table doesn't exist yet (migration not run), fall back to legacy
-        if (!sectionError && sectionRows && sectionRows.length > 0) {
+        // If table exists: use sections view when there are sections OR when admin (so they can add sections)
+        if (!sectionError && (sectionRows?.length > 0 || isAdmin)) {
           if (!cancelled) setMode('sections');
           return;
         }
@@ -86,7 +88,7 @@ export default function DayPage({ dayNumber }: { dayNumber: number }) {
     return () => {
       cancelled = true;
     };
-  }, [dayNumber]);
+  }, [dayNumber, isAdmin]);
 
   if (mode === 'loading') {
     return (
