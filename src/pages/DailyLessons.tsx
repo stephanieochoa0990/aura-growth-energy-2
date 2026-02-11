@@ -20,36 +20,33 @@ export default function DailyLessons() {
       </h1>
 
       <p className="mb-6 text-center text-gray-600">
-        Choose PREVIEW to see what students see.  
-        Choose EDIT to update lesson content.
+        <strong>Manage day</strong> opens the day with the &quot;Add Section&quot; button so you can add and edit sections.{" "}
+        <strong>Legacy edit</strong> edits the single lesson (course_content) if you still use it.
       </p>
 
       <div className="space-y-4">
         {days.map((d) => (
           <div
             key={d.day}
-            className="border p-4 rounded-lg flex justify-between items-center bg-white shadow"
+            className="border p-4 rounded-lg flex flex-wrap justify-between items-center gap-3 bg-white shadow"
           >
             <div>
               <h2 className="text-xl font-semibold">Day {d.day} — {d.title}</h2>
             </div>
 
-            <div className="flex gap-3">
-              {/* Student preview */}
+            <div className="flex flex-wrap gap-2 items-center">
               <button
                 onClick={() => navigate(`/day-${d.day}`)}
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className="px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 font-medium"
               >
-                Preview
+                Manage day / Add sections
               </button>
-
-              {/* Admin edit */}
-              <button
-                onClick={() => navigate(`/admin/lessons?day=${d.day}`)}
-                className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+              <a
+                href={`/admin/lessons?day=${d.day}`}
+                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 underline"
               >
-                Edit
-              </button>
+                Legacy edit
+              </a>
             </div>
           </div>
         ))}

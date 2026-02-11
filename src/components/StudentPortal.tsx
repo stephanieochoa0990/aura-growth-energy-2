@@ -47,6 +47,8 @@ export default function StudentPortal() {
   const isPreview = searchParams.get('preview') === '1';
   const previewUserId = searchParams.get('previewUserId');
   const { isAdmin } = usePermissions();
+  // When admin on Daily tab (not previewing), allow picking which day to view/edit
+  const [adminSelectedDay, setAdminSelectedDay] = useState<number>(1);
 
   useEffect(() => {
     checkUser();
@@ -276,7 +278,26 @@ export default function StudentPortal() {
           </div>
 
           <TabsContent value="daily" className="space-y-4">
-            <DailyContent currentDay={profile?.current_day || 1} userId={viewUserId ?? user.id} />
+            {isAdmin && (
+              <div className="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <span className="text-sm font-medium text-amber-800">Manage day:</span>
+                {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                  <Button
+                    key={d}
+                    variant={adminSelectedDay === d ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAdminSelectedDay(d)}
+                    className={adminSelectedDay === d ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                  >
+                    Day {d}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <DailyContent
+              currentDay={isAdmin ? adminSelectedDay : (profile?.current_day || 1)}
+              userId={viewUserId ?? user.id}
+            />
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-4">
