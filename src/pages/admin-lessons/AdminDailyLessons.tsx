@@ -546,7 +546,7 @@ const AdminDailyLessons: React.FC = () => {
                         {block.type === "video" && (
                           <div className="space-y-2">
                             <Input
-                              placeholder="Video URL (YouTube, Vimeo, etc.)"
+                              placeholder="Video storage path (aura-empowerment/day-1/video.mp4)"
                               value={block.url ?? ""}
                               onChange={(e) =>
                                 updateBlockUrl(section.id, block.id, e.target.value)

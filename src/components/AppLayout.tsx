@@ -10,7 +10,6 @@ import MobileNav from './MobileNav';
 import { NewsletterSignup } from './NewsletterSignup';
 import { ReviewsSection } from './reviews/ReviewsSection';
 import { instructorsData } from '@/data/instructorsData';
-import StudentPortal from './StudentPortal';
 import TestimonialCard from './TestimonialCard';
 import { WhiteLotus } from './WhiteLotus';
 import MysticalBackground from './MysticalBackground';
@@ -18,7 +17,6 @@ import MysticalBackground from './MysticalBackground';
 const AppLayout: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
-  const [showPortal, setShowPortal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
@@ -62,10 +60,6 @@ const AppLayout: React.FC = () => {
     rating: 5,
     transformation: "Activated my inner flame"
   }];
-  if (showPortal) {
-
-    return <StudentPortal />;
-  }
   return <div className="min-h-screen bg-white relative overflow-x-hidden">
 
       {/* Logo at the very top */}
@@ -79,7 +73,7 @@ const AppLayout: React.FC = () => {
       </div>
 
       {/* Mobile & Desktop Navigation */}
-      <MobileNav isAdmin={isAdmin} onPortalClick={() => setShowPortal(true)} />
+      <MobileNav isAdmin={isAdmin} onPortalClick={() => navigate('/student-portal')} />
 
       {/* Hero */}
       <div className="relative min-h-[600px] lg:min-h-[700px] flex items-center justify-center overflow-hidden bg-white px-4 py-16 sm:py-20">
@@ -110,7 +104,7 @@ const AppLayout: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-display mb-6 gold-gradient-text leading-tight tracking-tight">Aura Empowerment Class</h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 text-black/80 font-light font-accent tracking-wide">A 7-Day Mystical Journey</p>
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 sm:mb-12 text-black/70 max-w-3xl mx-auto leading-relaxed">Awaken to the sacred mysteries within. Remember your divine essence and learn to command your energetic field with sovereign grace.</p>
-          <button onClick={() => setShowPortal(true)} className="btn-gold group inline-flex items-center gap-3">
+          <button onClick={() => navigate('/student-portal')} className="btn-gold group inline-flex items-center gap-3">
             <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />
             <span className="text-base sm:text-lg font-semibold">Sign In to Student Portal</span>
             <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />

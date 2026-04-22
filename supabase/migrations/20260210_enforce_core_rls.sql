@@ -314,7 +314,7 @@ BEGIN
 
     IF NOT EXISTS (
       SELECT 1 FROM pg_policies 
-      WHERE scheanname = 'public' AND tablename = 'video_bookmarks' AND policyname = 'Users manage own video_bookmarks'
+      WHERE schemaname = 'public' AND tablename = 'video_bookmarks' AND policyname = 'Users manage own video_bookmarks'
     ) THEN
       CREATE POLICY "Users manage own video_bookmarks"
         ON public.video_bookmarks
@@ -346,4 +346,3 @@ BEGIN
     END IF;
   END IF;
 END $$;
-

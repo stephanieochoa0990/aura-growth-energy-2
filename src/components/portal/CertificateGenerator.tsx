@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Award, Download, CheckCircle, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import SignedMediaButton from '@/components/portal/SignedMediaButton';
+import { CERTIFICATE_MEDIA_BUCKET } from '@/lib/media';
 
 interface CertificateGeneratorProps {
   userId?: string;
@@ -187,13 +189,14 @@ export function CertificateGenerator({ userId, isPreview }: CertificateGenerator
           </div>
 
           <div className="flex gap-2">
-            <Button
-              onClick={() => window.open(certificate.pdf_url, '_blank')}
+            <SignedMediaButton
+              mediaPath={certificate.pdf_url}
+              bucket={CERTIFICATE_MEDIA_BUCKET}
               className="flex-1 bg-yellow-600 hover:bg-yellow-700"
             >
               <Download className="h-4 w-4 mr-2" />
               Download PDF
-            </Button>
+            </SignedMediaButton>
             <Button
               onClick={() => window.open(`/verify?id=${certificate.certificate_id}`, '_blank')}
               variant="outline"

@@ -30,16 +30,14 @@ export default function Verify() {
     setCertificate(null);
 
     try {
-      const { data, error: dbError } = await supabase
-        .from('certificates')
-        .select('certificate_id, student_name, completion_date, issued_at')
-        .eq('certificate_id', certificateId.trim())
-        .single();
+      const { data, error: verifyError } = await supabase.functions.invoke('verify-certificate', {
+        body: { certificateId: certificateId.trim() },
+      });
 
-      if (dbError || !data) {
+      if (verifyError || !data?.certificate) {
         setError('Certificate not found. Please check the ID and try again.');
       } else {
-        setCertificate(data);
+        setCertificate(data.certificate);
       }
     } catch (err) {
       setError('An error occurred while verifying the certificate.');

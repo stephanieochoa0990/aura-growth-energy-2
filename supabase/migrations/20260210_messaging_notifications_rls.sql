@@ -40,7 +40,7 @@ BEGIN
     ) THEN
       CREATE POLICY "Users manage own practice_sessions"
         ON public.practice_sessions
-        FOR INSERT, UPDATE, DELETE
+        FOR ALL
         TO authenticated
         USING (initiator_id = auth.uid() OR partner_id = auth.uid())
         WITH CHECK (initiator_id = auth.uid() OR partner_id = auth.uid());
@@ -132,4 +132,3 @@ BEGIN
     END IF;
   END IF;
 END $$;
-

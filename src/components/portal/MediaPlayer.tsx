@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Volume2, VolumeX, Maximize2 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { createSignedMediaUrl } from '@/lib/media';
 
 interface MediaPlayerProps {
   mediaUrl: string;
@@ -15,13 +16,34 @@ export default function MediaPlayer({ mediaUrl, mediaType, caption, sectionName 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(false);
+  const [signedMediaUrl, setSignedMediaUrl] = useState<string | null>(null);
+  const [loadingMedia, setLoadingMedia] = useState(mediaType !== 'youtube');
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const getYouTubeEmbedUrl = (url: string) => {
-    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)?.[1];
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-  };
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSignedUrl() {
+      if (mediaType === 'youtube') {
+        setSignedMediaUrl(null);
+        setLoadingMedia(false);
+        return;
+      }
+
+      setLoadingMedia(true);
+      const signedUrl = await createSignedMediaUrl(mediaUrl);
+      if (!cancelled) {
+        setSignedMediaUrl(signedUrl);
+        setLoadingMedia(false);
+      }
+    }
+
+    loadSignedUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [mediaUrl, mediaType]);
 
   const togglePlay = () => {
     if (mediaType === 'audio' && audioRef.current) {
@@ -67,14 +89,8 @@ export default function MediaPlayer({ mediaUrl, mediaType, caption, sectionName 
   if (mediaType === 'youtube') {
     return (
       <div className="space-y-2 w-full">
-        <div className="aspect-video bg-black rounded-lg overflow-hidden w-full max-w-full">
-          <iframe
-            src={getYouTubeEmbedUrl(mediaUrl)}
-            className="w-full h-full"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            title={sectionName || caption}
-          />
+        <div className="aspect-video bg-black rounded-lg overflow-hidden w-full max-w-full flex items-center justify-center p-4 text-center text-white/70">
+          External video embeds are disabled for private course media. Store this media in the private course-media bucket.
         </div>
         <p className="text-xs sm:text-sm text-center text-muted-foreground italic px-2 break-words">
           {sectionName && <span className="font-medium">{sectionName}: </span>}
@@ -85,12 +101,20 @@ export default function MediaPlayer({ mediaUrl, mediaType, caption, sectionName 
   }
 
   if (mediaType === 'audio') {
+    if (loadingMedia) {
+      return <div className="text-sm text-muted-foreground">Loading private audio...</div>;
+    }
+
+    if (!signedMediaUrl) {
+      return <div className="text-sm text-muted-foreground">Private audio is unavailable.</div>;
+    }
+
     return (
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 w-full">
         <CardContent className="p-3 sm:p-4">
           <audio
             ref={audioRef}
-            src={mediaUrl}
+            src={signedMediaUrl}
             onEnded={() => setIsPlaying(false)}
             className="hidden"
           />
@@ -137,12 +161,20 @@ export default function MediaPlayer({ mediaUrl, mediaType, caption, sectionName 
   }
 
   if (mediaType === 'video') {
+    if (loadingMedia) {
+      return <div className="aspect-video bg-black rounded-lg flex items-center justify-center text-white/70">Loading private video...</div>;
+    }
+
+    if (!signedMediaUrl) {
+      return <div className="aspect-video bg-black rounded-lg flex items-center justify-center p-4 text-center text-white/70">Private video is unavailable.</div>;
+    }
+
     return (
       <div className="space-y-2 w-full">
         <div className="relative bg-black rounded-lg overflow-hidden w-full max-w-full">
           <video
             ref={videoRef}
-            src={mediaUrl}
+            src={signedMediaUrl}
             className="w-full aspect-video"
             controls={false}
             onEnded={() => setIsPlaying(false)}

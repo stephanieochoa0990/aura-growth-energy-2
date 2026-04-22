@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Bookmark, BookmarkCheck, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Bookmark, BookmarkCheck, SkipBack, SkipForward, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { createSignedMediaUrl, COURSE_MEDIA_BUCKET, SIGNED_MEDIA_URL_TTL_SECONDS } from '@/lib/media';
 
 interface VideoPlayerProps {
   videoId: string;
@@ -33,12 +34,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [bookmarks, setBookmarks] = useState<number[]>([]);
   const [lastSavedPosition, setLastSavedPosition] = useState(0);
   const [hasLoadedInitialProgress, setHasLoadedInitialProgress] = useState(false);
+  const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
+  const [signedUrlExpiresAt, setSignedUrlExpiresAt] = useState<number>(0);
+  const [mediaLoading, setMediaLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressInterval = useRef<NodeJS.Timeout>();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
 
   useEffect(() => {
+    refreshSignedVideoUrl();
     loadVideoProgress();
     loadBookmarks();
     
@@ -48,7 +53,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveProgress();
     };
-  }, [videoId]);
+  }, [videoId, videoUrl]);
+
+  const refreshSignedVideoUrl = async () => {
+    setMediaLoading(true);
+    const signedUrl = await createSignedMediaUrl(videoUrl, {
+      bucket: COURSE_MEDIA_BUCKET,
+      expiresIn: SIGNED_MEDIA_URL_TTL_SECONDS,
+    });
+
+    setSignedVideoUrl(signedUrl);
+    setSignedUrlExpiresAt(signedUrl ? Date.now() + SIGNED_MEDIA_URL_TTL_SECONDS * 1000 : 0);
+    setMediaLoading(false);
+    return signedUrl;
+  };
 
   // Auto-save progress every 5 seconds while playing
   useEffect(() => {
@@ -152,13 +170,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     if (!videoRef.current) return;
     
     if (isPlaying) {
       videoRef.current.pause();
       if (progressInterval.current) clearInterval(progressInterval.current);
     } else {
+      if (!signedVideoUrl || signedUrlExpiresAt - Date.now() < 30000) {
+        const refreshedUrl = await refreshSignedVideoUrl();
+        if (!refreshedUrl) return;
+      }
       videoRef.current.play();
       progressInterval.current = setInterval(() => {
         if (videoRef.current) {
@@ -217,12 +239,29 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const isBookmarked = bookmarks.some(b => Math.abs(b - currentTime) < 2);
 
+  if (mediaLoading) {
+    return (
+      <div className="bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center text-white/70">
+        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+        Loading private video...
+      </div>
+    );
+  }
+
+  if (!signedVideoUrl) {
+    return (
+      <div className="bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center p-4 text-center text-white/70">
+        This video is not available as private course media yet.
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black rounded-lg overflow-hidden">
       <div className="relative aspect-video">
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={signedVideoUrl}
           className="w-full h-full"
           onLoadedMetadata={(e) => {
             setVideoDuration(e.currentTarget.duration);

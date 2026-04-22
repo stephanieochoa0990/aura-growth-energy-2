@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar, Clock, Video, Users, Bell, CheckCircle, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SignedMediaButton from '@/components/portal/SignedMediaButton';
 
 interface LiveSession {
   id: string;
@@ -256,13 +257,13 @@ const LiveSessionsView: React.FC = () => {
                             )}
                           </>
                         ) : session.recording_url ? (
-                          <Button 
+                          <SignedMediaButton
+                            mediaPath={session.recording_url}
                             variant="outline"
-                            onClick={() => window.open(session.recording_url, '_blank')}
                           >
                             <Video className="h-4 w-4 mr-2" />
                             Watch Recording
-                          </Button>
+                          </SignedMediaButton>
                         ) : (
                           <Badge variant="secondary">Recording Coming Soon</Badge>
                         )}

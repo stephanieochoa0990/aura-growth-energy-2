@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
+import SignedMediaButton from '@/components/portal/SignedMediaButton';
 
 interface ResourceLibraryProps {
   userId: string;
@@ -221,10 +222,10 @@ export default function ResourceLibrary({ userId }: ResourceLibraryProps) {
                     <span>{material.duration_minutes} minutes</span>
                   )}
                 </div>
-                <Button
+                <SignedMediaButton
+                  mediaPath={material.content_url}
                   variant="outline"
                   className="border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black min-h-[44px] w-full sm:w-auto text-base"
-                  onClick={() => window.open(material.content_url, '_blank')}
                 >
                   {material.is_downloadable ? (
                     <>
@@ -237,7 +238,7 @@ export default function ResourceLibrary({ userId }: ResourceLibraryProps) {
                       <span className="ml-2">Access</span>
                     </>
                   )}
-                </Button>
+                </SignedMediaButton>
               </div>
             </CardContent>
           </Card>

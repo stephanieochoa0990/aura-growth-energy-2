@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 import { VideoPlayer } from '@/components/portal/VideoPlayer';
+import SignedMediaButton from '@/components/portal/SignedMediaButton';
 import {
   Card,
   CardContent,
@@ -427,27 +428,25 @@ export default function DaySectionsView({ dayNumber }: { dayNumber: number }) {
               {section.audio_url && (
                 <div className="flex items-center gap-2">
                   <Music className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href={section.audio_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
+                  <SignedMediaButton
+                    mediaPath={section.audio_url}
+                    variant="link"
+                    className="h-auto p-0 text-sm text-primary hover:underline"
                   >
                     Listen to audio
-                  </a>
+                  </SignedMediaButton>
                 </div>
               )}
               {section.pdf_url && (
                 <div className="flex items-center gap-2">
                   <File className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    href={section.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
+                  <SignedMediaButton
+                    mediaPath={section.pdf_url}
+                    variant="link"
+                    className="h-auto p-0 text-sm text-primary hover:underline"
                   >
                     Open PDF
-                  </a>
+                  </SignedMediaButton>
                 </div>
               )}
             </CardContent>
@@ -561,33 +560,33 @@ function SectionForm({
         />
       </div>
       <div>
-        <Label htmlFor="video_url">Video URL (optional)</Label>
+        <Label htmlFor="video_url">Video Storage Path (optional)</Label>
         <Input
           id="video_url"
-          type="url"
+          type="text"
           value={form.video_url}
           onChange={(e) => setForm((f) => ({ ...f, video_url: e.target.value }))}
-          placeholder="https://..."
+          placeholder="aura-empowerment/day-1/video.mp4"
         />
       </div>
       <div>
-        <Label htmlFor="audio_url">Audio URL (optional)</Label>
+        <Label htmlFor="audio_url">Audio Storage Path (optional)</Label>
         <Input
           id="audio_url"
-          type="url"
+          type="text"
           value={form.audio_url}
           onChange={(e) => setForm((f) => ({ ...f, audio_url: e.target.value }))}
-          placeholder="https://..."
+          placeholder="aura-empowerment/day-1/audio.mp3"
         />
       </div>
       <div>
-        <Label htmlFor="pdf_url">PDF URL (optional)</Label>
+        <Label htmlFor="pdf_url">PDF Storage Path (optional)</Label>
         <Input
           id="pdf_url"
-          type="url"
+          type="text"
           value={form.pdf_url}
           onChange={(e) => setForm((f) => ({ ...f, pdf_url: e.target.value }))}
-          placeholder="https://..."
+          placeholder="aura-empowerment/day-1/worksheet.pdf"
         />
       </div>
       <div className="flex items-center gap-2">

@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import CourseAccessRoute from "@/components/auth/CourseAccessRoute";
+import AdminRoute from "@/components/auth/AdminRoute";
 
 // ---- Student Pages ----
 import Index from "./pages/Index";
@@ -56,16 +58,16 @@ const App = () => (
             <Route path="/verify" element={<Verify />} />
 
             {/* Student daily lessons */}
-            <Route path="/day-1" element={<Day1 />} />
-            <Route path="/day-2" element={<Day2 />} />
-            <Route path="/day-3" element={<Day3 />} />
-            <Route path="/day-4" element={<Day4 />} />
-            <Route path="/day-5" element={<Day5 />} />
-            <Route path="/day-6" element={<Day6 />} />
-            <Route path="/day-7" element={<Day7 />} />
+            <Route path="/day-1" element={<CourseAccessRoute><Day1 /></CourseAccessRoute>} />
+            <Route path="/day-2" element={<CourseAccessRoute><Day2 /></CourseAccessRoute>} />
+            <Route path="/day-3" element={<CourseAccessRoute><Day3 /></CourseAccessRoute>} />
+            <Route path="/day-4" element={<CourseAccessRoute><Day4 /></CourseAccessRoute>} />
+            <Route path="/day-5" element={<CourseAccessRoute><Day5 /></CourseAccessRoute>} />
+            <Route path="/day-6" element={<CourseAccessRoute><Day6 /></CourseAccessRoute>} />
+            <Route path="/day-7" element={<CourseAccessRoute><Day7 /></CourseAccessRoute>} />
 
-            <Route path="/integration" element={<IntegrationToolkit />} />
-            <Route path="/student-welcome" element={<StudentWelcome />} />
+            <Route path="/integration" element={<CourseAccessRoute><IntegrationToolkit /></CourseAccessRoute>} />
+            <Route path="/student-welcome" element={<CourseAccessRoute><StudentWelcome /></CourseAccessRoute>} />
 
             {/* -------------------------
                 ADMIN AUTH
@@ -78,18 +80,18 @@ const App = () => (
             {/* -------------------------
                 ADMIN DASHBOARD
             -------------------------- */}
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/lessons" element={<AdminDailyLessons />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/lessons" element={<AdminRoute><AdminDailyLessons /></AdminRoute>} />
 
             {/* -------------------------
                 ADMIN PREVIEW PAGES
             -------------------------- */}
-            <Route path="/class/daily" element={<DailyLessons />} />
+            <Route path="/class/daily" element={<AdminRoute><DailyLessons /></AdminRoute>} />
 
             {/* -------------------------
                 STUDENT PORTAL
             -------------------------- */}
-            <Route path="/student-portal" element={<StudentPortal />} />
+            <Route path="/student-portal" element={<CourseAccessRoute><StudentPortal /></CourseAccessRoute>} />
 
             {/* -------------------------
                 FALLBACK
