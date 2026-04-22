@@ -7,6 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { clearPendingCheckout, getPendingCheckoutCourseId, startCheckout } from '@/lib/checkout';
+
+async function resumePendingCheckoutIfNeeded() {
+  const pendingCourseId = getPendingCheckoutCourseId();
+  if (!pendingCourseId) return false;
+
+  await startCheckout(pendingCourseId);
+  clearPendingCheckout();
+  return true;
+}
 
 async function checkPasswordLeaked(password: string) {
   const hash = sha1(password).toString().toUpperCase();  // <-- FIX HERE
@@ -71,6 +81,17 @@ export default function AuthForm() {
             description: "Your account has been created.",
           });
 
+          try {
+            const checkoutStarted = await resumePendingCheckoutIfNeeded();
+            if (checkoutStarted) return;
+          } catch (checkoutError: any) {
+            toast({
+              title: "Checkout Error",
+              description: checkoutError.message || "Your account was created, but checkout could not start. Please try enrolling again.",
+              variant: "destructive",
+            });
+          }
+
           navigate('/student-welcome');
           return;
         }
@@ -113,6 +134,17 @@ export default function AuthForm() {
             title: "Welcome back!",
             description: "Redirecting to your portal...",
           });
+
+          try {
+            const checkoutStarted = await resumePendingCheckoutIfNeeded();
+            if (checkoutStarted) return;
+          } catch (checkoutError: any) {
+            toast({
+              title: "Checkout Error",
+              description: checkoutError.message || "You are signed in, but checkout could not start. Please try enrolling again.",
+              variant: "destructive",
+            });
+          }
 
           navigate('/student-welcome');
           return;

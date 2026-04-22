@@ -12,8 +12,8 @@ import { instructorsData } from '@/data/instructorsData';
 import TestimonialCard from './TestimonialCard';
 import { WhiteLotus } from './WhiteLotus';
 import MysticalBackground from './MysticalBackground';
-import { startCheckout } from '@/lib/checkout';
-import { ACTIVE_COURSE_ID } from '@/lib/course';
+import { setPendingCheckout, startCheckout } from '@/lib/checkout';
+import { ACTIVE_COURSE_DISPLAY_PRICE, ACTIVE_COURSE_ID } from '@/lib/course';
 import { useToast } from '@/hooks/use-toast';
 
 const AppLayout: React.FC = () => {
@@ -72,6 +72,7 @@ const AppLayout: React.FC = () => {
       await startCheckout(ACTIVE_COURSE_ID);
     } catch (error: any) {
       if (/sign in|create an account/i.test(error.message || '')) {
+        setPendingCheckout(ACTIVE_COURSE_ID);
         toast({
           title: 'Sign in required',
           description: 'Create an account or sign in before enrolling.',
@@ -133,7 +134,15 @@ const AppLayout: React.FC = () => {
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-display mb-6 gold-gradient-text leading-tight tracking-tight">Aura Empowerment Class</h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 text-black/80 font-light font-accent tracking-wide">A 7-Day Mystical Journey</p>
-          <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 sm:mb-12 text-black/70 max-w-3xl mx-auto leading-relaxed">Awaken to the sacred mysteries within. Remember your divine essence and learn to command your energetic field with sovereign grace.</p>
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 text-black/70 max-w-3xl mx-auto leading-relaxed">Awaken to the sacred mysteries within. Remember your divine essence and learn to command your energetic field with sovereign grace.</p>
+          <div className="mb-8 sm:mb-10 inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 rounded-md border border-gold/40 bg-white/80 px-5 py-3 shadow-sm">
+            <span className="text-xs uppercase tracking-[0.22em] text-black/55 font-semibold">
+              Enrollment Price
+            </span>
+            <span className="text-3xl sm:text-4xl font-display gold-gradient-text leading-none">
+              {ACTIVE_COURSE_DISPLAY_PRICE}
+            </span>
+          </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={handleEnroll}
@@ -246,6 +255,15 @@ const AppLayout: React.FC = () => {
             <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display gold-gradient-text mb-10 leading-tight">
               This is your homecoming. Your activation. Your remembrance.
             </p>
+            <div className="mb-8 inline-flex flex-col sm:flex-row items-center gap-2 sm:gap-3 rounded-md border border-gold/40 bg-white/80 px-5 py-3 shadow-sm">
+              <span className="text-xs uppercase tracking-[0.22em] text-black/55 font-semibold">
+                Enrollment Price
+              </span>
+              <span className="text-3xl sm:text-4xl font-display gold-gradient-text leading-none">
+                {ACTIVE_COURSE_DISPLAY_PRICE}
+              </span>
+            </div>
+            <div>
             <button
               onClick={handleEnroll}
               disabled={checkoutLoading}
@@ -257,6 +275,7 @@ const AppLayout: React.FC = () => {
               </span>
               <Sparkles className="w-6 h-6 group-hover:animate-pulse" />
             </button>
+            </div>
           </div>
         </div>
       </div>
