@@ -67,7 +67,7 @@ const App = () => (
             <Route path="/day-7" element={<CourseAccessRoute><Day7 /></CourseAccessRoute>} />
 
             <Route path="/integration" element={<CourseAccessRoute><IntegrationToolkit /></CourseAccessRoute>} />
-            <Route path="/student-welcome" element={<CourseAccessRoute><StudentWelcome /></CourseAccessRoute>} />
+            <Route path="/student-welcome" element={<CourseAccessRoute allowCheckoutActivation><StudentWelcome /></CourseAccessRoute>} />
 
             {/* -------------------------
                 ADMIN AUTH

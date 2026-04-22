@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import MysticalBackground from '@/components/MysticalBackground';
-import { Play, BookOpen, List } from 'lucide-react';
+import { Play, BookOpen, List, Loader2, RefreshCw } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { ACTIVE_COURSE_ID, ACTIVE_ENROLLMENT_STATUSES } from '@/lib/course';
 
 export default function StudentWelcome() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [firstName, setFirstName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [checkoutState, setCheckoutState] = useState<'none' | 'activating' | 'timeout'>('none');
   const [lastVideoProgress, setLastVideoProgress] = useState<{
     videoId: string;
     videoTitle: string;
@@ -20,9 +23,61 @@ export default function StudentWelcome() {
     completionPercentage: number;
   } | null>(null);
 
+  const isCheckoutSuccess = searchParams.get('checkout') === 'success';
+
   useEffect(() => {
+    if (isCheckoutSuccess) {
+      confirmCheckoutEnrollment();
+      return;
+    }
+
     loadUserData();
-  }, []);
+  }, [isCheckoutSuccess]);
+
+  const hasActiveEnrollment = async (userId: string) => {
+    const { data: enrollment, error } = await supabase
+      .from('enrollments')
+      .select('id, status, access_expires_at')
+      .eq('user_id', userId)
+      .eq('course_id', ACTIVE_COURSE_ID)
+      .in('status', ACTIVE_ENROLLMENT_STATUSES)
+      .maybeSingle();
+
+    if (error || !enrollment) return false;
+
+    const expiresAt = enrollment.access_expires_at
+      ? new Date(enrollment.access_expires_at).getTime()
+      : null;
+
+    return expiresAt === null || expiresAt > Date.now();
+  };
+
+  const confirmCheckoutEnrollment = async () => {
+    setLoading(false);
+    setCheckoutState('activating');
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate('/student-portal');
+      return;
+    }
+
+    const deadline = Date.now() + 20_000;
+
+    while (Date.now() < deadline) {
+      const active = await hasActiveEnrollment(user.id);
+
+      if (active) {
+        setCheckoutState('none');
+        await loadUserData();
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+
+    setCheckoutState('timeout');
+  };
 
   const loadUserData = async () => {
     try {
@@ -111,6 +166,64 @@ export default function StudentWelcome() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-[#D4AF37] text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (checkoutState === 'activating') {
+    return (
+      <div className="min-h-screen bg-black relative">
+        <MysticalBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-gray-900/95 backdrop-blur border-[#D4AF37]/20 p-6 sm:p-8 text-center space-y-5">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#D4AF37]">
+              Activating your access
+            </h1>
+            <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+              Your payment was successful. We are confirming your enrollment now.
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (checkoutState === 'timeout') {
+    return (
+      <div className="min-h-screen bg-black relative">
+        <MysticalBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-gray-900/95 backdrop-blur border-[#D4AF37]/20 p-6 sm:p-8 text-center space-y-5">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[#D4AF37]/10 flex items-center justify-center">
+              <RefreshCw className="h-8 w-8 text-[#D4AF37]" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#D4AF37]">
+              Access is still activating
+            </h1>
+            <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+              Your payment was received, but enrollment can take a few more moments to appear. Retry in a moment to refresh your access.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={confirmCheckoutEnrollment}
+                className="w-full bg-[#D4AF37] text-black hover:bg-yellow-600 min-h-[48px]"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry Activation
+              </Button>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="w-full border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black min-h-[48px]"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
     );
   }

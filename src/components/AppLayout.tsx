@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Shield, Sparkles, Star } from 'lucide-react';
-import BookingModal from './BookingModal';
 import ClassCard from './ClassCard';
 import InstructorCard from './InstructorCard';
 import MobileNav from './MobileNav';
@@ -13,15 +12,21 @@ import { instructorsData } from '@/data/instructorsData';
 import TestimonialCard from './TestimonialCard';
 import { WhiteLotus } from './WhiteLotus';
 import MysticalBackground from './MysticalBackground';
+import { startCheckout } from '@/lib/checkout';
+import { ACTIVE_COURSE_ID } from '@/lib/course';
+import { useToast } from '@/hooks/use-toast';
 
 const AppLayout: React.FC = () => {
-  const [modalOpen, setModalOpen] = useState(false);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
   useEffect(() => {
     checkAdminStatus();
   }, []);
+
   const checkAdminStatus = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -60,6 +65,31 @@ const AppLayout: React.FC = () => {
     rating: 5,
     transformation: "Activated my inner flame"
   }];
+
+  const handleEnroll = async () => {
+    try {
+      setCheckoutLoading(true);
+      await startCheckout(ACTIVE_COURSE_ID);
+    } catch (error: any) {
+      if (/sign in|create an account/i.test(error.message || '')) {
+        toast({
+          title: 'Sign in required',
+          description: 'Create an account or sign in before enrolling.',
+        });
+        navigate('/student-portal');
+        return;
+      }
+
+      toast({
+        title: 'Checkout unavailable',
+        description: error.message || 'Could not start checkout. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   return <div className="min-h-screen bg-white relative overflow-x-hidden">
 
       {/* Logo at the very top */}
@@ -104,11 +134,23 @@ const AppLayout: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-display mb-6 gold-gradient-text leading-tight tracking-tight">Aura Empowerment Class</h1>
           <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 text-black/80 font-light font-accent tracking-wide">A 7-Day Mystical Journey</p>
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 sm:mb-12 text-black/70 max-w-3xl mx-auto leading-relaxed">Awaken to the sacred mysteries within. Remember your divine essence and learn to command your energetic field with sovereign grace.</p>
-          <button onClick={() => navigate('/student-portal')} className="btn-gold group inline-flex items-center gap-3">
-            <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />
-            <span className="text-base sm:text-lg font-semibold">Sign In to Student Portal</span>
-            <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={handleEnroll}
+              disabled={checkoutLoading}
+              className="btn-gold group inline-flex items-center gap-3 disabled:opacity-60 disabled:pointer-events-none"
+            >
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />
+              <span className="text-base sm:text-lg font-semibold">
+                {checkoutLoading ? 'Opening Checkout...' : 'Enroll Now'}
+              </span>
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />
+            </button>
+            <button onClick={() => navigate('/student-portal')} className="btn-gold-outline group inline-flex items-center gap-3">
+              <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />
+              <span className="text-base sm:text-lg font-semibold">Student Portal</span>
+            </button>
+          </div>
         </div>
 
       </div>
@@ -204,9 +246,15 @@ const AppLayout: React.FC = () => {
             <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-display gold-gradient-text mb-10 leading-tight">
               This is your homecoming. Your activation. Your remembrance.
             </p>
-            <button onClick={() => setModalOpen(true)} className="btn-gold group inline-flex items-center gap-3">
+            <button
+              onClick={handleEnroll}
+              disabled={checkoutLoading}
+              className="btn-gold group inline-flex items-center gap-3 disabled:opacity-60 disabled:pointer-events-none"
+            >
               <Sparkles className="w-6 h-6 group-hover:animate-pulse" />
-              <span className="text-base sm:text-lg font-semibold">Begin Your Sacred Journey</span>
+              <span className="text-base sm:text-lg font-semibold">
+                {checkoutLoading ? 'Opening Checkout...' : 'Begin Your Sacred Journey'}
+              </span>
               <Sparkles className="w-6 h-6 group-hover:animate-pulse" />
             </button>
           </div>
@@ -260,8 +308,6 @@ const AppLayout: React.FC = () => {
         </div>
       </footer>
 
-
-      <BookingModal isOpen={modalOpen} onClose={() => setModalOpen(false)} classTitle="Aura Empowerment Class" classPrice="$497" classDate="Starting Soon" classTime="7-Day Journey" />
     </div>;
 };
 export default AppLayout;

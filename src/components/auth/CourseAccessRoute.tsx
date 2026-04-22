@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Loader2, Lock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ACTIVE_COURSE_ID, ACTIVE_ENROLLMENT_STATUSES } from '@/lib/course';
@@ -9,12 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CourseAccessRouteProps {
   children: ReactNode;
+  allowCheckoutActivation?: boolean;
 }
 
 const ADMIN_ROLES = ['admin', 'super_admin', 'content_manager', 'moderator', 'support_staff'];
 
-export default function CourseAccessRoute({ children }: CourseAccessRouteProps) {
+export default function CourseAccessRoute({ children, allowCheckoutActivation = false }: CourseAccessRouteProps) {
   const [state, setState] = useState<'loading' | 'unauthenticated' | 'allowed' | 'denied'>('loading');
+  const location = useLocation();
+  const isCheckoutActivation =
+    allowCheckoutActivation &&
+    location.pathname === '/student-welcome' &&
+    new URLSearchParams(location.search).get('checkout') === 'success';
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +96,10 @@ export default function CourseAccessRoute({ children }: CourseAccessRouteProps) 
   }
 
   if (state === 'denied') {
+    if (isCheckoutActivation) {
+      return <>{children}</>;
+    }
+
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-gray-900 border-[#D4AF37]/20 text-white">
