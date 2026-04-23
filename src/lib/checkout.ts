@@ -22,7 +22,12 @@ export async function startCheckout(courseId = ACTIVE_COURSE_ID): Promise<void> 
     throw new Error('Please sign in or create an account before enrolling.');
   }
 
+  const { data: sessionData } = await supabase.auth.getSession();
+
   const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+    headers: {
+      Authorization: `Bearer ${sessionData.session?.access_token}`,
+    },
     body: {
       course_id: courseId,
       user_id: user.id,
