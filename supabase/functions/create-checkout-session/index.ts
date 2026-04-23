@@ -20,31 +20,81 @@ serve(async (req) => {
   }
 
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    console.error("create-checkout-session rejected non-POST request", {
+      method: req.method,
+    });
+    return json({ error: "Method Not Allowed" }, 405);
   }
 
   try {
+    let requestBody: { course_id?: string; user_id?: string } | null = null;
+
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      console.error("create-checkout-session invalid JSON body", {
+        error,
+      });
+      return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    const { course_id, user_id } = requestBody;
+
+    console.error("create-checkout-session incoming request", {
+      body: requestBody,
+      course_id,
+      user_id,
+      hasStripeSecretKey: Boolean(stripeSecretKey),
+      hasAuraPriceId: Boolean(auraPriceId),
+      hasSupabaseUrl: Boolean(supabaseUrl),
+      hasSupabaseAnonKey: Boolean(supabaseAnonKey),
+    });
+
     if (!stripeSecretKey) {
+      console.error("create-checkout-session missing STRIPE_SECRET_KEY", {
+        course_id,
+        user_id,
+        hasStripeSecretKey: false,
+      });
       return json({ error: "Stripe is not configured" }, 500);
     }
 
     if (!auraPriceId) {
+      console.error("create-checkout-session missing STRIPE_AURA_EMPOWERMENT_PRICE_ID", {
+        course_id,
+        user_id,
+        hasAuraPriceId: false,
+      });
       return json({ error: "Course price is not configured" }, 500);
     }
 
     if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("create-checkout-session missing Supabase configuration", {
+        course_id,
+        user_id,
+        hasSupabaseUrl: Boolean(supabaseUrl),
+        hasSupabaseAnonKey: Boolean(supabaseAnonKey),
+      });
       return json({ error: "Supabase is not configured" }, 500);
     }
 
     const authHeader = req.headers.get("authorization") || "";
     const token = authHeader.replace("Bearer ", "").trim();
     if (!token) {
+      console.error("create-checkout-session missing authorization token", {
+        course_id,
+        user_id,
+        hasAuthHeader: Boolean(authHeader),
+      });
       return json({ error: "Unauthorized" }, 401);
     }
 
-    const { course_id, user_id } = await req.json();
-
     if (course_id !== ACTIVE_COURSE_ID) {
+      console.error("create-checkout-session unsupported course_id", {
+        course_id,
+        user_id,
+        expectedCourseId: ACTIVE_COURSE_ID,
+      });
       return json({ error: "Unsupported course_id" }, 400);
     }
 
@@ -55,10 +105,21 @@ serve(async (req) => {
 
     const { data: authUser, error: authError } = await supabase.auth.getUser();
     if (authError || !authUser?.user) {
+      console.error("create-checkout-session auth lookup failed", {
+        course_id,
+        user_id,
+        authUserFound: Boolean(authUser?.user),
+        authError: authError?.message,
+      });
       return json({ error: "Unauthorized" }, 401);
     }
 
     if (user_id !== authUser.user.id) {
+      console.error("create-checkout-session user mismatch", {
+        course_id,
+        user_id,
+        authUserId: authUser.user.id,
+      });
       return json({ error: "User mismatch" }, 403);
     }
 
@@ -77,6 +138,15 @@ serve(async (req) => {
     if (existingEnrollment) {
       return json({ url: `${appUrl}/student-welcome?already_enrolled=1` });
     }
+
+    console.error("create-checkout-session preparing Stripe request", {
+      course_id,
+      user_id,
+      authUserFound: true,
+      stripeInitializationSuccess: true,
+      hasStripeSecretKey: Boolean(stripeSecretKey),
+      hasAuraPriceId: Boolean(auraPriceId),
+    });
 
     const params = new URLSearchParams();
     params.set("mode", "payment");
@@ -108,9 +178,10 @@ serve(async (req) => {
     }
 
     return json({ url: session.url, id: session.id });
-  } catch (err) {
-    console.error("create-checkout-session error:", err);
-    return json({ error: "Failed to create checkout session" }, 500);
+  } catch (error) {
+    console.error("Stripe error:", error);
+    console.error("create-checkout-session error:", error);
+    return json({ error: error instanceof Error ? error.message : "Failed to create checkout session" }, 500);
   }
 });
 
