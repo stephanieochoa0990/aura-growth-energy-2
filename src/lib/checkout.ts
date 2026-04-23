@@ -18,20 +18,45 @@ export function clearPendingCheckout() {
 export async function startCheckout(courseId = ACTIVE_COURSE_ID): Promise<void> {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
+  console.debug('[checkout] startCheckout invoked', {
+    courseId,
+    hasUser: Boolean(user),
+    userId: user?.id,
+    userError: userError?.message,
+  });
+
   if (userError || !user) {
     throw new Error('Please sign in or create an account before enrolling.');
   }
 
-  const { data: sessionData } = await supabase.auth.getSession();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  console.debug('[checkout] session before create-checkout-session invoke', {
+    hasSession: Boolean(sessionData.session),
+    hasAccessToken: Boolean(accessToken),
+    accessTokenLength: accessToken?.length,
+    sessionError: sessionError?.message,
+  });
+
+  if (!accessToken) {
+    throw new Error('Your sign-in session is not ready. Please refresh and try again.');
+  }
 
   const { data, error } = await supabase.functions.invoke('create-checkout-session', {
     headers: {
-      Authorization: `Bearer ${sessionData.session?.access_token}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: {
       course_id: courseId,
       user_id: user.id,
     },
+  });
+
+  console.debug('[checkout] create-checkout-session invoke completed', {
+    hasData: Boolean(data),
+    hasUrl: Boolean(data?.url),
+    errorMessage: error?.message,
   });
 
   if (error) {
