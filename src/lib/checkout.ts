@@ -5,6 +5,10 @@ export const PENDING_CHECKOUT_COURSE_ID_KEY = 'pending_checkout_course_id';
 
 export function setPendingCheckout(courseId = ACTIVE_COURSE_ID) {
   sessionStorage.setItem(PENDING_CHECKOUT_COURSE_ID_KEY, courseId);
+  console.debug('[checkout] pending checkout stored', {
+    courseId,
+    storageKey: PENDING_CHECKOUT_COURSE_ID_KEY,
+  });
 }
 
 export function getPendingCheckoutCourseId() {

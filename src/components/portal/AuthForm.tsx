@@ -10,12 +10,21 @@ import { useToast } from '@/hooks/use-toast';
 import { clearPendingCheckout, getPendingCheckoutCourseId, startCheckout } from '@/lib/checkout';
 
 async function resumePendingCheckoutIfNeeded() {
-  const pendingCourseId = getPendingCheckoutCourseId();
-  if (!pendingCourseId) return false;
+  const pendingCourseId = getPendingCheckoutCourseId();
+  console.debug('[auth] pending checkout lookup', {
+    pendingCourseId,
+    hasPendingCheckout: Boolean(pendingCourseId),
+  });
 
-  await startCheckout(pendingCourseId);
-  clearPendingCheckout();
-  return true;
+  if (!pendingCourseId) return false;
+
+  console.debug('[auth] startCheckout called after auth', {
+    pendingCourseId,
+  });
+
+  await startCheckout(pendingCourseId);
+  clearPendingCheckout();
+  return true;
 }
 
 async function checkPasswordLeaked(password: string) {
@@ -69,6 +78,12 @@ export default function AuthForm() {
 
         if (error) throw error;
 
+        console.debug('[auth] signup succeeded', {
+          hasUser: Boolean(data.user),
+          userId: data.user?.id,
+          hasSession: Boolean(data.session),
+        });
+
         if (data.user) {
           await supabase.from('profiles').insert({
             id: data.user.id,
@@ -79,18 +94,24 @@ export default function AuthForm() {
           toast({
             title: "Welcome to the Journey!",
             description: "Your account has been created.",
-          });
+           });
 
-          try {
-            const checkoutStarted = await resumePendingCheckoutIfNeeded();
-            if (checkoutStarted) return;
-          } catch (checkoutError: any) {
-            toast({
-              title: "Checkout Error",
-              description: checkoutError.message || "Your account was created, but checkout could not start. Please try enrolling again.",
-              variant: "destructive",
-            });
-          }
+          if (data.session) {
+            try {
+              const checkoutStarted = await resumePendingCheckoutIfNeeded();
+              if (checkoutStarted) return;
+            } catch (checkoutError: any) {
+              toast({
+                title: "Checkout Error",
+                description: checkoutError.message || "Your account was created, but checkout could not start. Please try enrolling again.",
+                variant: "destructive",
+              });
+            }
+          } else {
+            console.debug('[auth] signup has no active session; skipping checkout resume', {
+              userId: data.user.id,
+            });
+          }
 
           navigate('/student-welcome');
           return;
@@ -104,6 +125,12 @@ export default function AuthForm() {
         });
 
         if (error) throw error;
+
+        console.debug('[auth] login succeeded', {
+          hasUser: Boolean(data.user),
+          userId: data.user?.id,
+          hasSession: Boolean(data.session),
+        });
 
         if (data.user) {
           const { data: profile } = await supabase
