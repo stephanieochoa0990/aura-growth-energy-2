@@ -27,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    let requestBody: { course_id?: string; user_id?: string } | null = null;
+    let requestBody: { course_id?: string } | null = null;
 
     try {
       requestBody = await req.json();
@@ -38,12 +38,11 @@ serve(async (req) => {
       return json({ error: "Invalid JSON body" }, 400);
     }
 
-    const { course_id, user_id } = requestBody;
+    const { course_id } = requestBody;
 
     console.error("create-checkout-session incoming request", {
       body: requestBody,
       course_id,
-      user_id,
       hasStripeSecretKey: Boolean(stripeSecretKey),
       hasAuraPriceId: Boolean(auraPriceId),
       hasSupabaseUrl: Boolean(supabaseUrl),
@@ -53,7 +52,6 @@ serve(async (req) => {
     if (!stripeSecretKey) {
       console.error("create-checkout-session missing STRIPE_SECRET_KEY", {
         course_id,
-        user_id,
         hasStripeSecretKey: false,
       });
       return json({ error: "Stripe is not configured" }, 500);
@@ -62,7 +60,6 @@ serve(async (req) => {
     if (!auraPriceId) {
       console.error("create-checkout-session missing STRIPE_AURA_EMPOWERMENT_PRICE_ID", {
         course_id,
-        user_id,
         hasAuraPriceId: false,
       });
       return json({ error: "Course price is not configured" }, 500);
@@ -71,7 +68,6 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error("create-checkout-session missing Supabase configuration", {
         course_id,
-        user_id,
         hasSupabaseUrl: Boolean(supabaseUrl),
         hasSupabaseAnonKey: Boolean(supabaseAnonKey),
       });
@@ -83,7 +79,6 @@ serve(async (req) => {
     if (!token) {
       console.error("create-checkout-session missing authorization token", {
         course_id,
-        user_id,
         hasAuthHeader: Boolean(authHeader),
       });
       return json({ error: "Unauthorized" }, 401);
@@ -92,7 +87,6 @@ serve(async (req) => {
     if (course_id !== ACTIVE_COURSE_ID) {
       console.error("create-checkout-session unsupported course_id", {
         course_id,
-        user_id,
         expectedCourseId: ACTIVE_COURSE_ID,
       });
       return json({ error: "Unsupported course_id" }, 400);
@@ -107,20 +101,10 @@ serve(async (req) => {
     if (authError || !authUser?.user) {
       console.error("create-checkout-session auth lookup failed", {
         course_id,
-        user_id,
         authUserFound: Boolean(authUser?.user),
         authError: authError?.message,
       });
       return json({ error: "Unauthorized" }, 401);
-    }
-
-    if (user_id !== authUser.user.id) {
-      console.error("create-checkout-session user mismatch", {
-        course_id,
-        user_id,
-        authUserId: authUser.user.id,
-      });
-      return json({ error: "User mismatch" }, 403);
     }
 
     const { data: existingEnrollment, error: enrollmentError } = await supabase
@@ -141,7 +125,7 @@ serve(async (req) => {
 
     console.error("create-checkout-session preparing Stripe request", {
       course_id,
-      user_id,
+      authUserId: authUser.user.id,
       authUserFound: true,
       stripeInitializationSuccess: true,
       hasStripeSecretKey: Boolean(stripeSecretKey),

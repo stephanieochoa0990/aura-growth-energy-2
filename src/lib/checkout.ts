@@ -53,7 +53,6 @@ export async function startCheckout(courseId = ACTIVE_COURSE_ID): Promise<void> 
     },
     body: {
       course_id: courseId,
-      user_id: user.id,
     },
   });
 
